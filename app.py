@@ -86,6 +86,29 @@ def draw_distributed_load(ax,x1,x2,y,q,label='q',color='#2255cc',n_arrows=8):
     ax.text((x1+x2)/2,y+(-arrow_h-0.3 if sign<0 else arrow_h+0.15),
             f"{label} = {abs(q):.1f} kN/m",color=color,fontsize=9,fontweight='bold',ha='center')
 
+def draw_distributed_load_perp(ax, q_start_s, q_end_s, c_ang, s_ang, q_mag, q_down=True, n=9, color='#2255cc'):
+    """Draw distributed load perpendicular to bar, attached to bar surface."""
+    if q_end_s<=q_start_s or q_mag<=0: return
+    # Normal to bar: rotate bar tangent 90° CCW → upward normal = (-s_ang, c_ang)
+    # q_down=True → arrows point from above bar toward bar (local -y)
+    # perp direction from bar outward (where arrow tail is)
+    px = s_ang if q_down else -s_ang   # outward direction x
+    py = -c_ang if q_down else c_ang   # outward direction y
+    arrow_len=max(0.35, q_mag*0.03+0.25)
+    xs_s=np.linspace(q_start_s, q_end_s, n)
+    for s in xs_s:
+        tip_x=s*c_ang; tip_y=s*s_ang
+        base_x=tip_x+px*arrow_len; base_y=tip_y+py*arrow_len
+        ax.annotate('',xy=(tip_x,tip_y),xytext=(base_x,base_y),
+                    arrowprops=dict(arrowstyle='-|>',color=color,lw=1.4,mutation_scale=11))
+    # Top line
+    bx=[s*c_ang+px*arrow_len for s in xs_s]; by=[s*s_ang+py*arrow_len for s in xs_s]
+    ax.plot(bx,by,color=color,lw=2.2)
+    mid=( q_start_s+q_end_s)/2
+    ax.text(mid*c_ang+px*(arrow_len+0.22),mid*s_ang+py*(arrow_len+0.22),
+            f"q={q_mag:.1f}kN/m",color=color,fontsize=9,fontweight='bold',ha='center',va='center',
+            bbox=dict(fc='white',alpha=0.7,ec='none',pad=1))
+
 def draw_moment_arc(ax,x,y,M,r=0.25,color='purple'):
     if abs(M)<1e-9: return
     t1,t2=(30,330) if M>0 else (210,510)
@@ -119,7 +142,7 @@ st.sidebar.markdown("## 🏗️ EduStruct")
 st.sidebar.markdown("<small>Mini-SAP2000 Educational</small>",unsafe_allow_html=True)
 st.sidebar.markdown("---")
 modul=st.sidebar.radio("**Selectează Modulul**",[
-    "🔧 Calcul 2D FEM",
+    "🔧 Calcul 2D Grinzi",
     "📐 Rezistența Materialelor",
     "📏 Statica 1 — Static Determinate",
     "🔁 Statica 2 — Static Nedeterminate",
@@ -128,181 +151,309 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("<small style='color:#aaa;'>Bazat pe manualele românești:<br>975-4.pdf Statica1<br>138-3.pdf Statica2<br>481-0.pdf RezMat</small>",unsafe_allow_html=True)
 
 # ============================================================
-# MODUL 1: CALCUL 2D FEM
+# MODUL 1: CALCUL 2D GRINZI
 # ============================================================
-if modul == "🔧 Calcul 2D FEM":
-    st.title("Calcul FEM Bară 2D")
-    st.markdown("Analiză structurală prin **Metoda Elementelor Finite** pentru bară/grindă 2D.")
+if modul == "🔧 Calcul 2D Grinzi":
+    st.title("Calcul 2D Grinzi")
+    st.markdown("Analiză structurală prin **Metoda Elementelor Finite** — grindă/bară 2D cu reazeme la distanțe personalizate.")
     st.markdown("---")
-    if "L_val" not in st.session_state: st.session_state.L_val=6.0
-    if "Ang_val" not in st.session_state: st.session_state.Ang_val=0.0
-    def _upd_Lsl(): st.session_state.L_val=st.session_state.L_slider_fem
-    def _upd_Lni(): st.session_state.L_val=st.session_state.L_num_fem
-    def _upd_Asl(): st.session_state.Ang_val=float(st.session_state.A_slider_fem)
-    def _upd_Ani(): st.session_state.Ang_val=float(st.session_state.A_num_fem)
-    st.sidebar.header("1. Geometrie Bară")
-    st.sidebar.slider("Lungime L (m)",0.1,30.0,float(st.session_state.L_val),key="L_slider_fem",on_change=_upd_Lsl)
-    L=st.sidebar.number_input("L exact (m):",value=float(st.session_state.L_val),key="L_num_fem",on_change=_upd_Lni,min_value=0.1)
-    st.sidebar.slider("Înclinare (°)",0.0,90.0,float(st.session_state.Ang_val),key="A_slider_fem",on_change=_upd_Asl)
-    theta_deg=st.sidebar.number_input("Unghi (°):",value=float(st.session_state.Ang_val),key="A_num_fem",on_change=_upd_Ani,min_value=0.0,max_value=90.0)
-    b_cm=st.sidebar.number_input("Lățime b (cm)",min_value=0.0,value=30.0,key="fem_b_cm")
-    h_cm=st.sidebar.number_input("Înălțime h (cm)",min_value=0.0,value=50.0,key="fem_h_cm")
-    b,h_sec=b_cm/100,h_cm/100; A_sec=b*h_sec; I_sec=(b*h_sec**3)/12 if b>0 and h_sec>0 else 0
-    st.sidebar.markdown("### Secțiune")
-    if A_sec>0:
-        st.sidebar.latex(rf"A={b_cm:.0f}\times{h_cm:.0f}={A_sec*1e4:.1f}\text{{ cm}}^2")
-        st.sidebar.latex(rf"I={to_sci(I_sec)}\text{{ m}}^4")
-    st.sidebar.header("2. Material")
-    mat=st.sidebar.selectbox("Material",["Beton C20/25","Beton C25/30","Beton C30/37","Beton C35/45","Oțel S235","Oțel S275","Oțel S355"],key="fem_mat")
-    E_dict={"Beton C20/25":30e6,"Beton C25/30":31e6,"Beton C30/37":33e6,"Beton C35/45":34e6,"Oțel S235":210e6,"Oțel S275":210e6,"Oțel S355":210e6}
-    E=E_dict[mat]
-    st.sidebar.header("3. Reazeme")
-    ro={0:"Liber",1:"Articulație",2:"Reazem simplu",3:"Încastrare"}
-    r1=st.sidebar.selectbox("Nod A",[0,1,2,3],index=1,format_func=lambda x:ro[x],key="fem_r1")
-    r2=st.sidebar.selectbox("Nod B",[0,1,2,3],index=2,format_func=lambda x:ro[x],key="fem_r2")
-    gdl=sum([2 if r==1 else 1 if r==2 else 3 if r==3 else 0 for r in [r1,r2]])
-    G=gdl-3
-    if G==0: st.sidebar.success(f"Static Determinată (G=0)")
-    elif G>0: st.sidebar.warning(f"Nedeterminată ns={G}")
-    else: st.sidebar.error(f"MECANISM! G={G}")
 
-    st.header("Configurare Încărcări")
-    c1,c2,c3=st.columns(3)
-    with c1: q_val=st.number_input("q (kN/m) jos pozitiv",value=0.0,step=1.0,key="fem_q")
-    with c2: q_start=st.number_input("De la x(m)",min_value=0.0,value=0.0,key="fem_qstart")
-    with c3: q_end=st.number_input("Până la x(m)",min_value=0.0,value=float(L),key="fem_qend")
-    if "fem_forces" not in st.session_state: st.session_state.fem_forces=[]
-    ca,cb=st.columns([1,5])
-    with ca:
-        if st.button("+ Forță/Moment",key="fem_add"): st.session_state.fem_forces.append({"tip":"Fy","val":0.0,"dist":L/2})
-        if st.button("- Șterge ultima",key="fem_del"):
-            if st.session_state.fem_forces: st.session_state.fem_forces.pop()
-    edited=[]
-    if st.session_state.fem_forces:
-        cols=st.columns(min(len(st.session_state.fem_forces),4))
-        for i,f in enumerate(st.session_state.fem_forces):
-            with cols[i%4]:
+    # --- SIDEBAR: GEOMETRIE + SECTIUNE + MATERIAL ---
+    if "gv_L" not in st.session_state: st.session_state.gv_L=6.0
+    if "gv_A" not in st.session_state: st.session_state.gv_A=0.0
+    def _gL(): st.session_state.gv_L=st.session_state.gv_Lsl
+    def _gLn(): st.session_state.gv_L=st.session_state.gv_Lni
+    def _gA(): st.session_state.gv_A=float(st.session_state.gv_Asl)
+    def _gAn(): st.session_state.gv_A=float(st.session_state.gv_Ani)
+    st.sidebar.header("1. Geometrie")
+    st.sidebar.slider("Lungime L (m)",0.5,30.0,float(st.session_state.gv_L),0.5,key="gv_Lsl",on_change=_gL)
+    L=st.sidebar.number_input("L exact (m)",value=float(st.session_state.gv_L),min_value=0.5,key="gv_Lni",on_change=_gLn)
+    st.sidebar.slider("Înclinare (°)",0.0,85.0,float(st.session_state.gv_A),1.0,key="gv_Asl",on_change=_gA)
+    theta_deg=st.sidebar.number_input("Unghi exact (°)",value=float(st.session_state.gv_A),min_value=0.0,max_value=85.0,key="gv_Ani",on_change=_gAn)
+    th=np.radians(theta_deg); c_ang,s_ang=np.cos(th),np.sin(th)
+    end_x,end_y=L*c_ang,L*s_ang
+
+    st.sidebar.header("2. Secțiune")
+    b_cm=st.sidebar.number_input("Lățime b (cm)",min_value=1.0,value=30.0,key="gv_b")
+    h_cm=st.sidebar.number_input("Înălțime h (cm)",min_value=1.0,value=50.0,key="gv_h")
+    b_m,h_m=b_cm/100,h_cm/100; A_sec=b_m*h_m; I_sec=b_m*h_m**3/12
+    st.sidebar.latex(rf"A={A_sec*1e4:.1f}\text{{cm}}^2,\quad I={to_sci(I_sec)}\text{{m}}^4")
+
+    st.sidebar.header("3. Material")
+    mat=st.sidebar.selectbox("Material",["Beton C20/25","Beton C25/30","Beton C30/37","Beton C35/45","Oțel S235","Oțel S275","Oțel S355"],key="gv_mat")
+    E={"Beton C20/25":30e6,"Beton C25/30":31e6,"Beton C30/37":33e6,"Beton C35/45":34e6,"Oțel S235":210e6,"Oțel S275":210e6,"Oțel S355":210e6}[mat]
+
+    # --- REAZEME la distante personalizate ---
+    st.subheader("Reazeme")
+    ro_lbl={0:"Liber",1:"🔺 Articulație (pin)",2:"🔵 Reazem simplu (roller)",3:"▪️ Încastrare (fixed)"}
+    if "gv_sup" not in st.session_state:
+        st.session_state.gv_sup=[{"x":0.0,"tip":1},{"x":float(L),"tip":2}]
+    cs_btn=st.columns([1,1,4])
+    if cs_btn[0].button("＋ Adaugă reazem",key="gv_sadd"):
+        st.session_state.gv_sup.append({"x":float(L)/2,"tip":2})
+    if cs_btn[1].button("－ Șterge ultimul",key="gv_sdel"):
+        if len(st.session_state.gv_sup)>1: st.session_state.gv_sup.pop()
+    sup_edited=[]
+    n_sup=len(st.session_state.gv_sup)
+    sup_cols=st.columns(min(n_sup,4))
+    for i,s in enumerate(st.session_state.gv_sup):
+        with sup_cols[i%4]:
+            tip_idx=[0,1,2,3].index(s["tip"]) if s["tip"] in [0,1,2,3] else 1
+            t=st.selectbox(f"Tip reazem {i+1}",[0,1,2,3],index=tip_idx,format_func=lambda x:ro_lbl[x],key=f"gv_st_{i}")
+            xpos=st.number_input(f"Poziție x{i+1} (m)",min_value=0.0,max_value=float(L),value=float(np.clip(s["x"],0,L)),step=0.5,key=f"gv_sx_{i}")
+            sup_edited.append({"x":xpos,"tip":t})
+    st.session_state.gv_sup=sup_edited
+    # Static determinacy
+    total_r=sum([2 if s["tip"]==1 else 1 if s["tip"]==2 else 3 if s["tip"]==3 else 0 for s in st.session_state.gv_sup])
+    G_val=total_r-3
+    if G_val==0: st.success(f"✅ Structură **static determinată** (ns=0) — {total_r} reacțiuni, 3 ecuații")
+    elif G_val>0: st.warning(f"⚠️ **Static nedeterminată** ns={G_val} — {total_r} reacțiuni")
+    else: st.error(f"🔴 **MECANISM!** G={G_val} — structura instabilă")
+
+    # --- INCARCARI ---
+    st.subheader("Încărcări distribuite q")
+    qc1,qc2,qc3,qc4=st.columns(4)
+    q_abs=qc1.number_input("q (kN/m)",min_value=0.0,value=0.0,step=1.0,key="gv_qabs")
+    q_dir=qc2.selectbox("Direcție q",["↓ Jos (−y local)","↑ Sus (+y local)"],key="gv_qdir")
+    q_down=(q_dir=="↓ Jos (−y local)")
+    q_eff=q_abs if q_down else -q_abs   # sign for FEM (positive = down in local y)
+    q_start=qc3.number_input("De la x (m)",min_value=0.0,max_value=float(L),value=0.0,step=0.5,key="gv_qx1")
+    q_end=qc4.number_input("Până la x (m)",min_value=0.0,max_value=float(L),value=float(L),step=0.5,key="gv_qx2")
+
+    st.subheader("Forțe concentrate și momente")
+    if "gv_forces" not in st.session_state: st.session_state.gv_forces=[]
+    fa,fb=st.columns([1,5])
+    with fa:
+        if st.button("＋ Forță/Moment",key="gv_fadd"): st.session_state.gv_forces.append({"tip":"F","P":10.0,"alpha":-90.0,"dist":float(L)/2})
+        if st.button("－ Șterge ultima",key="gv_fdel"):
+            if st.session_state.gv_forces: st.session_state.gv_forces.pop()
+    f_edited=[]
+    if st.session_state.gv_forces:
+        fcols=st.columns(min(len(st.session_state.gv_forces),3))
+        for i,f in enumerate(st.session_state.gv_forces):
+            with fcols[i%3]:
                 st.markdown(f"**Acțiunea {i+1}**")
-                tip=st.selectbox("Tip",["Fy","Fx","M"],index=["Fy","Fx","M"].index(f["tip"]),key=f"fem_tip_{i}")
-                val=st.number_input("Valoare",value=f["val"],key=f"fem_val_{i}")
-                d=st.number_input("x(m)",0.0,float(L),float(f["dist"]),key=f"fem_d_{i}")
-                edited.append({"tip":tip,"val":val,"dist":d})
-        st.session_state.fem_forces=edited
+                tip=st.selectbox("Tip",["F — Forță (P,α)","M — Moment"],index=0 if f["tip"]=="F" else 1,key=f"gv_ft_{i}")
+                tip_k="F" if tip.startswith("F") else "M"
+                if tip_k=="F":
+                    P=st.number_input("P (kN) — pozitiv",min_value=0.01,value=abs(f.get("P",10.0)),step=1.0,key=f"gv_fP_{i}")
+                    alpha=st.number_input("α (°) — 0=→, 90=↑, −90=↓, 180=←",value=float(f.get("alpha",-90.0)),min_value=-180.0,max_value=180.0,step=5.0,key=f"gv_fa_{i}")
+                    d=st.number_input("x (m)",0.0,float(L),float(np.clip(f.get("dist",L/2),0,L)),step=0.5,key=f"gv_fd_{i}")
+                    fx_g=P*np.cos(np.radians(alpha)); fy_g=P*np.sin(np.radians(alpha))
+                    st.caption(f"Fx={fx_g:.2f} kN | Fy={fy_g:.2f} kN")
+                    f_edited.append({"tip":"F","P":P,"alpha":alpha,"dist":d})
+                else:
+                    Mval=st.number_input("M (kNm) — + antiorar",value=float(f.get("val",5.0)),step=1.0,key=f"gv_fM_{i}")
+                    d=st.number_input("x (m)",0.0,float(L),float(np.clip(f.get("dist",L/2),0,L)),step=0.5,key=f"gv_fd2_{i}")
+                    f_edited.append({"tip":"M","val":Mval,"dist":d})
+        st.session_state.gv_forces=f_edited
 
-    th=np.radians(theta_deg); c_ang,s_ang=np.cos(th),np.sin(th); end_x,end_y=L*c_ang,L*s_ang
-    fig1,ax1=plt.subplots(figsize=(11,max(3.5,7*s_ang+1.5)),dpi=150)
-    ax1.plot([0,end_x],[0,end_y],"k-",lw=5.5,zorder=3,solid_capstyle="round")
-    ax1.text(end_x/2,end_y/2+0.35,f"L={L:.2f} m",ha="center",fontsize=11,fontweight="bold",color="#1a3a5c")
-    ss=max(0.18,L*0.028)
-    if r1==1: draw_pin(ax1,0,0,ss)
-    elif r1==2: draw_roller(ax1,0,0,ss)
-    elif r1==3: draw_fixed_bottom(ax1,0,0,ss)
-    if r2==1: draw_pin(ax1,end_x,end_y,ss)
-    elif r2==2: draw_roller(ax1,end_x,end_y,ss)
-    elif r2==3: draw_fixed_bottom(ax1,end_x,end_y,ss)
-    ax1.text(0,ss*2,"A",fontsize=11,fontweight="bold",ha="center")
-    ax1.text(end_x,end_y+ss*2,"B",fontsize=11,fontweight="bold",ha="center")
-    if q_val>0 and q_end>q_start: draw_distributed_load(ax1,q_start*c_ang,q_end*c_ang,end_y+0.7,q_val)
-    arsc=max(0.55,L*0.09)
-    for f in st.session_state.fem_forces:
-        if abs(f["val"])>0:
-            fp,fyp=f["dist"]*c_ang,f["dist"]*s_ang
-            if f["tip"]=="Fy": draw_force_arrow(ax1,fp,fyp,0,1 if f["val"]>0 else -1,f"{abs(f['val'])}kN",scale=arsc)
-            elif f["tip"]=="Fx": draw_force_arrow(ax1,fp,fyp,1 if f["val"]>0 else -1,0,f"{abs(f['val'])}kN",scale=arsc)
-            else: draw_moment_arc(ax1,fp,fyp,f["val"],r=ss*1.5,color="purple")
-    draw_axes(ax1,min(0,end_x)-1.2,min(0,end_y)-0.1,length=0.7)
-    mg=max(L*0.22,1.8)
-    ax1.set_xlim(min(0,end_x)-mg,max(0,end_x)+mg); ax1.set_ylim(min(0,end_y)-mg,max(0,end_y)+mg)
-    ax1.set_aspect("equal"); ax1.axis("off"); ax1.set_title("Schiță Model Structural FEM",fontsize=13,fontweight="bold")
+    # --- SCHIȚĂ ---
+    ss=max(0.18,L*0.03)
+    fig1,ax1=plt.subplots(figsize=(12,max(3.5,end_y+3.0)),dpi=150)
+    ax1.plot([0,end_x],[0,end_y],"k-",lw=6,zorder=3,solid_capstyle="round")
+    ax1.text(end_x/2+s_ang*0.3,end_y/2-c_ang*0.3+0.3,f"L={L:.1f} m",ha="center",fontsize=11,fontweight="bold",color="#1a3a5c")
+    # Draw supports
+    node_labels=["A","B","C","D","E","F"]
+    for idx,s in enumerate(st.session_state.gv_sup):
+        sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
+        lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
+        ax1.text(sx_g-s_ang*ss*2,sy_g+c_ang*ss*2,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",ha="center")
+        if s["tip"]==1: draw_pin(ax1,sx_g,sy_g,ss)
+        elif s["tip"]==2: draw_roller(ax1,sx_g,sy_g,ss)
+        elif s["tip"]==3: draw_fixed_bottom(ax1,sx_g,sy_g,ss)
+        if s["x"]>0 and s["x"]<L:
+            ax1.text(sx_g,sy_g-ss*2.8,f"x={s['x']:.1f}m",fontsize=7.5,ha="center",color="gray")
+    # Draw q perpendicular to bar
+    if q_abs>0 and q_end>q_start:
+        draw_distributed_load_perp(ax1,q_start,q_end,c_ang,s_ang,q_abs,q_down)
+    # Draw forces
+    arsc=max(0.55,L*0.1)
+    for f in st.session_state.gv_forces:
+        d=f.get("dist",0); fp=d*c_ang; fyp=d*s_ang
+        if f["tip"]=="F":
+            P=f["P"]; alpha_r=np.radians(f["alpha"])
+            fx_g=P*np.cos(alpha_r); fy_g=P*np.sin(alpha_r)
+            draw_force_arrow(ax1,fp,fyp,fx_g,fy_g,f"{P:.0f}kN",color="#c00",scale=arsc)
+            if abs(fx_g)>0.1 and abs(fy_g)>0.1:
+                ax1.text(fp+fx_g/P*arsc*0.5+0.05,fyp+fy_g/P*arsc*0.5,
+                         f"Fx={fx_g:.1f}\nFy={fy_g:.1f}",fontsize=7,color="#900",
+                         ha="left",va="center",bbox=dict(fc="white",alpha=0.7,ec="none",pad=1))
+        else:
+            draw_moment_arc(ax1,fp,fyp,f.get("val",0),r=ss*1.8,color="purple")
+            ax1.text(fp+ss*2.5,fyp,f"M={f.get('val',0):.0f}kNm",fontsize=8,color="purple",fontweight="bold")
+    draw_axes(ax1,min(0,end_x)-1.2,min(0,end_y)-0.3,length=0.7)
+    mg=max(L*0.2,1.5)
+    ax1.set_xlim(min(0,end_x)-mg,max(0,end_x)+mg)
+    ax1.set_ylim(min(0,end_y)-mg*1.2,max(0,end_y)+mg*1.5)
+    ax1.set_aspect("equal"); ax1.axis("off")
+    g_txt="static determinată" if G_val==0 else (f"nedeterminată ns={G_val}" if G_val>0 else "MECANISM")
+    ax1.set_title(f"Schiță Model Structural — {g_txt}  |  θ={theta_deg:.0f}°  L={L:.1f}m",fontsize=12,fontweight="bold")
     st.pyplot(fig1); plt.close(fig1)
 
     st.markdown("---")
-    if st.button("Efectuează Calculul FEM",type="primary",use_container_width=True,key="fem_calc_btn"):
+    if st.button("▶ Efectuează Calculul",type="primary",use_container_width=True,key="gv_calc"):
         if A_sec==0: st.error("Introduceți secțiunea.")
+        elif G_val<0: st.error("Structura este un mecanism! Adaugă reazeme.")
         else:
             try:
-                raw_nodes=[0.0,L]+[f["dist"] for f in st.session_state.fem_forces if abs(f["val"])>0]
-                if q_val>0: raw_nodes+=[q_start,q_end]
-                nodes_s=np.unique(np.round(raw_nodes,6)).tolist(); nn=len(nodes_s); ne=nn-1
+                # Build node list
+                raw_nodes=set([0.0,L])
+                for s in st.session_state.gv_sup: raw_nodes.add(round(s["x"],6))
+                for f in st.session_state.gv_forces: raw_nodes.add(round(f.get("dist",0),6))
+                if q_abs>0: raw_nodes|={round(q_start,6),round(q_end,6)}
+                nodes_s=sorted(raw_nodes); nn=len(nodes_s); ne=nn-1
+
+                def nidx(xv): return nodes_s.index(round(xv,6))
+
                 T_blk=np.array([[c_ang,s_ang,0],[-s_ang,c_ang,0],[0,0,1]])
                 T6=np.zeros((6,6)); T6[:3,:3]=T_blk; T6[3:,3:]=T_blk
                 K_g=np.zeros((3*nn,3*nn)); F_g=np.zeros(3*nn)
+
                 for i in range(ne):
                     Le=nodes_s[i+1]-nodes_s[i]
-                    if Le<=0: continue
+                    if Le<1e-9: continue
                     EA=E*A_sec/Le; EI12=12*E*I_sec/Le**3; EI6=6*E*I_sec/Le**2; EI4=4*E*I_sec/Le; EI2=2*E*I_sec/Le
                     k_l=np.array([[EA,0,0,-EA,0,0],[0,EI12,EI6,0,-EI12,EI6],[0,EI6,EI4,0,-EI6,EI2],
-                        [-EA,0,0,EA,0,0],[0,-EI12,-EI6,0,EI12,-EI6],[0,EI6,EI2,0,-EI6,EI4]])
-                    k_glob=T6.T@k_l@T6; idx=slice(3*i,3*i+6); K_g[idx,idx]+=k_glob
+                                  [-EA,0,0,EA,0,0],[0,-EI12,-EI6,0,EI12,-EI6],[0,EI6,EI2,0,-EI6,EI4]])
+                    k_g=T6.T@k_l@T6; idx=slice(3*i,3*i+6); K_g[idx,idx]+=k_g
                     mid=(nodes_s[i]+nodes_s[i+1])/2
-                    if q_val>0 and (q_start-1e-6<=mid<=q_end+1e-6):
-                        qv=-q_val; qyl=qv*c_ang; qxl=qv*s_ang
-                        fe=np.array([qxl*Le/2,qyl*Le/2,qyl*Le**2/12,qxl*Le/2,qyl*Le/2,-qyl*Le**2/12])
-                        F_g[idx]+=T6.T@fe
-                for f in st.session_state.fem_forces:
-                    if abs(f["val"])>0:
-                        ni=nodes_s.index(round(f["dist"],6))
-                        if f["tip"]=="Fx": F_g[3*ni]+=f["val"]
-                        elif f["tip"]=="Fy": F_g[3*ni+1]+=f["val"]
-                        else: F_g[3*ni+2]+=f["val"]
+                    if q_abs>0 and (q_start-1e-6<=mid<=q_end+1e-6):
+                        # q perpendicular to bar → local: qxl=0, qyl=-q_eff
+                        qyl=-q_eff  # local y load (positive q_eff=down → qyl negative = down in local)
+                        fe_l=np.array([0,qyl*Le/2,qyl*Le**2/12,0,qyl*Le/2,-qyl*Le**2/12])
+                        F_g[idx]+=T6.T@fe_l
+
+                for f in st.session_state.gv_forces:
+                    ni=nidx(f.get("dist",0)); base=3*ni
+                    if f["tip"]=="F":
+                        alpha_r=np.radians(f["alpha"]); P=f["P"]
+                        F_g[base]+=P*np.cos(alpha_r); F_g[base+1]+=P*np.sin(alpha_r)
+                    else: F_g[base+2]+=f.get("val",0)
+
+                # Boundary conditions
                 bl=[]
-                if r1==1: bl+=[0,1]
-                elif r1==2: bl+=[1]
-                elif r1==3: bl+=[0,1,2]
-                lst=3*(nn-1)
-                if r2==1: bl+=[lst,lst+1]
-                elif r2==2: bl+=[lst+1]
-                elif r2==3: bl+=[lst,lst+1,lst+2]
+                for s in st.session_state.gv_sup:
+                    ni=nidx(s["x"]); base=3*ni
+                    if s["tip"]==1: bl+=[base,base+1]
+                    elif s["tip"]==2: bl+=[base+1]
+                    elif s["tip"]==3: bl+=[base,base+1,base+2]
+                bl=list(set(bl))
                 free=[i for i in range(3*nn) if i not in bl]
-                U_g=np.zeros(3*nn); U_g[free]=np.linalg.solve(K_g[np.ix_(free,free)],F_g[free])
+                if not free: raise ValueError("Nicio liberă — mecanism")
+                U_g=np.zeros(3*nn)
+                U_g[free]=np.linalg.solve(K_g[np.ix_(free,free)],F_g[free])
                 R_g=K_g@U_g-F_g
-                x_pl,N_pl,V_pl,M_pl=[],[],[],[]
                 U_loc=np.zeros(3*nn)
                 for i in range(nn): U_loc[3*i:3*i+3]=T_blk@U_g[3*i:3*i+3]
+
+                x_pl,N_pl,V_pl,M_pl=[],[],[],[]
                 for i in range(ne):
                     Le=nodes_s[i+1]-nodes_s[i]
-                    if Le<=0: continue
-                    EA=E*A_sec/Le; EI12=12*E*I_sec/Le**3; EI6=6*E*I_sec/Le**2; EI4=4*E*I_sec/Le; EI2=2*E*I_sec/Le
+                    if Le<1e-9: continue
+                    EI12=12*E*I_sec/Le**3; EI6=6*E*I_sec/Le**2; EI4=4*E*I_sec/Le; EI2=2*E*I_sec/Le
+                    EA=E*A_sec/Le
                     k_l=np.array([[EA,0,0,-EA,0,0],[0,EI12,EI6,0,-EI12,EI6],[0,EI6,EI4,0,-EI6,EI2],
-                        [-EA,0,0,EA,0,0],[0,-EI12,-EI6,0,EI12,-EI6],[0,EI6,EI2,0,-EI6,EI4]])
+                                  [-EA,0,0,EA,0,0],[0,-EI12,-EI6,0,EI12,-EI6],[0,EI6,EI2,0,-EI6,EI4]])
                     ue=np.concatenate([U_loc[3*i:3*i+3],U_loc[3*(i+1):3*(i+1)+3]])
-                    fel=np.zeros(6); mid=(nodes_s[i]+nodes_s[i+1])/2
-                    hq=q_val>0 and (q_start-1e-6<=mid<=q_end+1e-6); qyl=0
-                    if hq:
-                        qv=-q_val; qyl=qv*c_ang; qxl=qv*s_ang
-                        fel=np.array([qxl*Le/2,qyl*Le/2,qyl*Le**2/12,qxl*Le/2,qyl*Le/2,-qyl*Le**2/12])
+                    mid=(nodes_s[i]+nodes_s[i+1])/2
+                    hq=q_abs>0 and (q_start-1e-6<=mid<=q_end+1e-6)
+                    qyl_loc=-q_eff if hq else 0
+                    fel=np.array([0,qyl_loc*Le/2,qyl_loc*Le**2/12,0,qyl_loc*Le/2,-qyl_loc*Le**2/12]) if hq else np.zeros(6)
                     fe2=k_l@ue-fel; Ns=-fe2[0]; Vs=fe2[1]; Ms=-fe2[2]
-                    xs=np.linspace(0,Le,60)
-                    if hq: Nx=Ns*np.ones_like(xs); Vx=Vs+qyl*xs; Mx=Ms+Vs*xs+qyl*xs**2/2
-                    else: Nx=Ns*np.ones_like(xs); Vx=Vs*np.ones_like(xs); Mx=Ms+Vs*xs
+                    xs=np.linspace(0,Le,80)
+                    Nx=Ns*np.ones_like(xs)
+                    Vx=Vs+qyl_loc*xs if hq else Vs*np.ones_like(xs)
+                    Mx=Ms+Vs*xs+qyl_loc*xs**2/2 if hq else Ms+Vs*xs
                     x_pl.extend(nodes_s[i]+xs); N_pl.extend(Nx); V_pl.extend(Vx); M_pl.extend(Mx)
-                st.success("Calcul FEM finalizat!")
-                RxA,RyA,MzA=R_g[0],R_g[1],R_g[2]; RxB,RyB,MzB=R_g[-3],R_g[-2],R_g[-1]
-                cr1,cr2=st.columns(2)
-                with cr1:
-                    st.markdown("**Reacțiuni Nod A:**")
-                    if r1 in [1,3]: st.markdown(f"HA = **{RxA:.4f} kN**")
-                    if r1 in [1,2,3]: st.markdown(f"VA = **{RyA:.4f} kN**")
-                    if r1==3: st.markdown(f"MA = **{MzA:.4f} kNm**")
-                with cr2:
-                    st.markdown("**Reacțiuni Nod B:**")
-                    if r2 in [1,3]: st.markdown(f"HB = **{RxB:.4f} kN**")
-                    if r2 in [1,2,3]: st.markdown(f"VB = **{RyB:.4f} kN**")
-                    if r2==3: st.markdown(f"MB = **{MzB:.4f} kNm**")
-                st.metric("Săgeată max",f"{np.max(np.abs(U_loc[1::3]))*1000:.4f} mm")
-                xa=np.array(x_pl)
-                fig_r,(aN,aV,aM)=plt.subplots(3,1,figsize=(12,10),sharex=True,dpi=180)
-                fill_diagram(aN,xa,np.array(N_pl),"#1a6faf","N (kN)"); aN.set_title("N(x)",fontweight="bold",color="#1a6faf"); label_extremes(aN,xa,np.array(N_pl),"#1a6faf")
-                fill_diagram(aV,xa,np.array(V_pl),"#2ca02c","T (kN)"); aV.set_title("T(x)",fontweight="bold",color="#2ca02c"); label_extremes(aV,xa,np.array(V_pl),"#2ca02c")
-                fill_diagram(aM,xa,np.array(M_pl),"#d62728","M (kNm)"); aM.set_title("M(x) [fibra ïntinsă]",fontweight="bold",color="#d62728"); aM.invert_yaxis(); label_extremes(aM,xa,np.array(M_pl),"#d62728")
-                aM.set_xlabel("x (m)",fontsize=11); plt.tight_layout(); fig_r.suptitle("Diagrame N,T,M — FEM",fontsize=14,fontweight="bold",y=1.01)
+
+                st.success("✅ Calcul finalizat!")
+                xa=np.array(x_pl); Va=np.array(V_pl); Ma=np.array(M_pl); Na=np.array(N_pl)
+
+                # --- REACTIUNI frumos ---
+                st.markdown("### Reacțiuni la Reazeme")
+                rcols=st.columns(min(len(st.session_state.gv_sup),4))
+                for idx,s in enumerate(st.session_state.gv_sup):
+                    ni=nidx(s["x"]); base=3*ni; lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
+                    with rcols[idx%4]:
+                        st.markdown(f"**Reazem {lbl} (x={s['x']:.1f}m)**")
+                        if s["tip"] in [1,3]: st.metric(f"H{lbl} (kN)",f"{R_g[base]:.3f}")
+                        if s["tip"] in [1,2,3]: st.metric(f"V{lbl} (kN)",f"{R_g[base+1]:.3f}")
+                        if s["tip"]==3: st.metric(f"M{lbl} (kNm)",f"{R_g[base+2]:.3f}")
+
+                # Echilibru global
+                Fx_sum=sum(R_g[3*nidx(s["x"])] for s in st.session_state.gv_sup if s["tip"] in [1,3])
+                Fy_sum=sum(R_g[3*nidx(s["x"])+1] for s in st.session_state.gv_sup if s["tip"] in [1,2,3])
+                for f in st.session_state.gv_forces:
+                    if f["tip"]=="F":
+                        Fx_sum+=f["P"]*np.cos(np.radians(f["alpha"]))
+                        Fy_sum+=f["P"]*np.sin(np.radians(f["alpha"]))
+                if q_abs>0: Fy_sum+=(-q_eff)*(q_end-q_start)*c_ang  # global y from perp q
+
+                eq1,eq2=st.columns(2)
+                _ = eq1.success(f"ΣFx={Fx_sum:.4f}≈0 ✅") if abs(Fx_sum)<0.05 else eq1.warning(f"ΣFx={Fx_sum:.4f}")
+                _ = eq2.success(f"ΣFy={Fy_sum:.4f}≈0 ✅") if abs(Fy_sum)<0.05 else eq2.warning(f"ΣFy={Fy_sum:.4f}")
+
+                st.metric("Săgeată maximă",f"{np.max(np.abs(U_loc[1::3]))*1000:.4f} mm")
+
+                # --- DIAGRAME N, T, M ---
+                fig_r,(aN,aV,aM)=plt.subplots(3,1,figsize=(13,11),sharex=True,dpi=180)
+                fill_diagram(aN,xa,Na,"#1a6faf","N (kN)"); aN.set_title("N(x) — Efort axial",fontweight="bold",color="#1a6faf"); label_extremes(aN,xa,Na,"#1a6faf")
+                fill_diagram(aV,xa,Va,"#2ca02c","T (kN)"); aV.set_title("T(x) — Forță tăietoare",fontweight="bold",color="#2ca02c"); label_extremes(aV,xa,Va,"#2ca02c")
+                fill_diagram(aM,xa,Ma,"#d62728","M (kNm)"); aM.set_title("M(x) — Moment încovoietor [fibra întinsă jos]",fontweight="bold",color="#d62728"); aM.invert_yaxis(); label_extremes(aM,xa,Ma,"#d62728")
+
+                # Mmax unde T=0
+                sign_ch=np.where(np.diff(np.sign(Va)))[0]
+                for sc in sign_ch:
+                    dV=Va[sc+1]-Va[sc]
+                    if abs(dV)<1e-9: continue
+                    x0=xa[sc]-Va[sc]*(xa[sc+1]-xa[sc])/dV
+                    m0=float(np.interp(x0,xa,Ma))
+                    aV.axvline(x0,color="orange",lw=1.2,ls="--",alpha=0.8)
+                    aM.axvline(x0,color="orange",lw=1.2,ls="--",alpha=0.8)
+                    aM.annotate(f"M_max\n{m0:.3f}kNm",xy=(x0,-m0),fontsize=8,color="orange",fontweight="bold",
+                                ha="center",va="top",bbox=dict(fc="white",alpha=0.8,ec="orange",pad=2))
+
+                aM.set_xlabel("x (m)",fontsize=11); plt.tight_layout()
+                fig_r.suptitle(f"Diagrame N, T, M — {mat}  EI={E*I_sec/1e3:.0f} MNm²",fontsize=13,fontweight="bold",y=1.01)
                 st.pyplot(fig_r)
+
+                # Formule Mmax
+                if len(sign_ch)>0:
+                    st.markdown("### Formule Moment Maxim (unde T=0)")
+                    for sc in sign_ch:
+                        dV=Va[sc+1]-Va[sc]
+                        if abs(dV)<1e-9: continue
+                        x0=xa[sc]-Va[sc]*(xa[sc+1]-xa[sc])/dV
+                        m0=float(np.interp(x0,xa,Ma))
+                        V0_near=float(Va[max(0,sc-2)])
+                        if q_abs>0:
+                            st.latex(rf"T(x_0)=0 \Rightarrow x_0={x0:.3f}\text{{m}},\quad M_{{max}}=M(x_0)={m0:.3f}\text{{kNm}}")
+                        else:
+                            st.latex(rf"T\text{{ se anulează la }}x_0={x0:.3f}\text{{m}},\quad M_{{max}}={m0:.3f}\text{{kNm}}")
+
+                # Model de calcul
+                with st.expander("📐 Model de calcul (pas cu pas)"):
+                    st.markdown(f"""**Structura:** {len(st.session_state.gv_sup)} reazeme, {n_sup} noduri FEM, {ne} elemente
+**EI** = {E:.2e} kN/m² × {I_sec:.4e} m⁴ = {E*I_sec:.3e} kNm²
+**EA** = {E:.2e} × {A_sec:.4f} = {E*A_sec:.3e} kN""")
+                    st.markdown("**Algoritmul FEM:**")
+                    st.latex(r"\mathbf{K}\cdot\mathbf{u}=\mathbf{F}\;\Rightarrow\;\mathbf{u}_{liber}=\mathbf{K}_{ll}^{-1}\cdot\mathbf{F}_{liber}")
+                    st.latex(r"\mathbf{R}=\mathbf{K}\cdot\mathbf{u}-\mathbf{F}\quad(\text{reacțiuni})")
+                    st.markdown(f"**Noduri FEM:** {[f'{v:.2f}m' for v in nodes_s]}")
+                    st.markdown(f"**GDL total:** {3*nn}, **blocate:** {len(bl)}, **libere:** {len(free)}")
+                    st.markdown("**Eforturi în secțiune prin integrare:**")
+                    st.latex(r"N(x)=\text{const./element},\quad T(x)=T_0+q\cdot x,\quad M(x)=M_0+T_0\cdot x+\frac{q x^2}{2}")
+
                 buf=BytesIO()
                 with PdfPages(buf) as pdf:
                     pdf.savefig(fig1,bbox_inches="tight"); pdf.savefig(fig_r,bbox_inches="tight")
-                st.download_button("Descarcă PDF",buf.getvalue(),"FEM.pdf","application/pdf",key="fem_dl"); plt.close(fig_r)
+                st.download_button("📥 Descarcă PDF",buf.getvalue(),"Grinzi2D.pdf","application/pdf",key="gv_dl")
+                plt.close(fig_r)
             except np.linalg.LinAlgError:
-                st.error("MECANISM! Structura instabilă.")
+                st.error("🔴 MECANISM! Matricea de rigiditate e singulară — verifică reazemele.")
+            except Exception as ex:
+                st.error(f"Eroare: {ex}")
 
 # ============================================================
 # MODUL 2: REZISTENTA MATERIALELOR
