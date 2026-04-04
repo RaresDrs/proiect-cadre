@@ -92,8 +92,9 @@ def draw_distributed_load_perp(ax, q_start_s, q_end_s, c_ang, s_ang, q_mag, q_do
     # Normal to bar: rotate bar tangent 90° CCW → upward normal = (-s_ang, c_ang)
     # q_down=True → arrows point from above bar toward bar (local -y)
     # perp direction from bar outward (where arrow tail is)
-    px = s_ang if q_down else -s_ang   # outward direction x
-    py = -c_ang if q_down else c_ang   # outward direction y
+    # Normal "sus" față de bară = (-s_ang, c_ang). Dacă q↓ coada e sus, dacă q↑ coada e jos.
+    px = -s_ang if q_down else s_ang
+    py =  c_ang if q_down else -c_ang
     arrow_len=max(0.35, q_mag*0.03+0.25)
     xs_s=np.linspace(q_start_s, q_end_s, n)
     for s in xs_s:
@@ -371,12 +372,55 @@ if modul == "🔧 Calcul 2D Grinzi":
                 xa=np.array(x_pl); Va=np.array(V_pl); Ma=np.array(M_pl); Na=np.array(N_pl)
 
                 # --- REACTIUNI frumos ---
+                # --- SCHIȚĂ CU REACȚIUNI DESENATE ---
                 st.markdown("### Reacțiuni la Reazeme")
+                _max_R=max((abs(R_g[3*nidx(s["x"])+1]) for s in st.session_state.gv_sup if s["tip"] in [1,2,3]),default=1.0)
+                _max_R=max(_max_R,0.01); _rsc=max(0.5,L*0.09)/_max_R*_max_R  # arrow scale
+                _rsc_arr=max(0.5,L*0.10)  # fixed visual scale
+                fig_reac,ax_reac=plt.subplots(figsize=(12,max(3.5,end_y+3.0)),dpi=150)
+                ax_reac.plot([0,end_x],[0,end_y],"k-",lw=6,zorder=3,solid_capstyle="round")
+                # redraw supports and loads (same as preview)
+                for idx,s in enumerate(st.session_state.gv_sup):
+                    sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang; lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
+                    if s["tip"]==1: draw_pin(ax_reac,sx_g,sy_g,ss)
+                    elif s["tip"]==2: draw_roller(ax_reac,sx_g,sy_g,ss)
+                    elif s["tip"]==3: draw_fixed_bottom(ax_reac,sx_g,sy_g,ss)
+                if q_abs>0 and q_end>q_start:
+                    draw_distributed_load_perp(ax_reac,q_start,q_end,c_ang,s_ang,q_abs,q_down)
+                for f in st.session_state.gv_forces:
+                    d=f.get("dist",0); fp=d*c_ang; fyp=d*s_ang
+                    if f["tip"]=="F":
+                        alpha_r=np.radians(f["alpha"]); P=f["P"]
+                        draw_force_arrow(ax_reac,fp,fyp,P*np.cos(alpha_r),P*np.sin(alpha_r),f"{P:.0f}kN",color="#c00",scale=_rsc_arr)
+                    else: draw_moment_arc(ax_reac,fp,fyp,f.get("val",0),r=ss*1.8,color="purple")
+                # Draw reaction arrows per support
+                for idx,s in enumerate(st.session_state.gv_sup):
+                    ni=nidx(s["x"]); base=3*ni; lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
+                    sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
+                    HA_v=R_g[base] if s["tip"] in [1,3] else 0.0
+                    VA_v=R_g[base+1] if s["tip"] in [1,2,3] else 0.0
+                    MA_v=R_g[base+2] if s["tip"]==3 else 0.0
+                    if abs(HA_v)>1e-4:
+                        draw_force_arrow(ax_reac,sx_g,sy_g,HA_v,0,f"H{lbl}={HA_v:.2f}kN",color="#e67e00",scale=_rsc_arr)
+                    if abs(VA_v)>1e-4:
+                        draw_force_arrow(ax_reac,sx_g,sy_g,0,VA_v,f"V{lbl}={VA_v:.2f}kN",color="#e67e00",scale=_rsc_arr)
+                    if abs(MA_v)>1e-4:
+                        draw_moment_arc(ax_reac,sx_g,sy_g,MA_v,r=ss*2,color="#e67e00")
+                        ax_reac.text(sx_g+ss*2.5,sy_g,f"M{lbl}={MA_v:.2f}kNm",fontsize=8,color="#e67e00",fontweight="bold")
+                draw_axes(ax_reac,min(0,end_x)-1.2,min(0,end_y)-0.3,length=0.7)
+                mg=max(L*0.2,1.5)
+                ax_reac.set_xlim(min(0,end_x)-mg,max(0,end_x)+mg)
+                ax_reac.set_ylim(min(0,end_y)-mg*1.5,max(0,end_y)+mg*1.5)
+                ax_reac.set_aspect("equal"); ax_reac.axis("off")
+                ax_reac.set_title("Schiță cu Reacțiuni (portocaliu)",fontsize=12,fontweight="bold")
+                st.pyplot(fig_reac); plt.close(fig_reac)
+
+                # Metrics tabel
                 rcols=st.columns(min(len(st.session_state.gv_sup),4))
                 for idx,s in enumerate(st.session_state.gv_sup):
                     ni=nidx(s["x"]); base=3*ni; lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
                     with rcols[idx%4]:
-                        st.markdown(f"**Reazem {lbl} (x={s['x']:.1f}m)**")
+                        st.markdown(f"**Reazem {lbl} — x={s['x']:.1f}m**")
                         if s["tip"] in [1,3]: st.metric(f"H{lbl} (kN)",f"{R_g[base]:.3f}")
                         if s["tip"] in [1,2,3]: st.metric(f"V{lbl} (kN)",f"{R_g[base+1]:.3f}")
                         if s["tip"]==3: st.metric(f"M{lbl} (kNm)",f"{R_g[base+2]:.3f}")
