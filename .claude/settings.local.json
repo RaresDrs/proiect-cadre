@@ -4,7 +4,8 @@
       "Bash(pip install:*)",
       "Bash(python -c ':*)",
       "Bash(python:*)",
-      "Bash(streamlit run:*)"
+      "Bash(streamlit run:*)",
+      "Bash(python3:*)"
     ]
   }
 }

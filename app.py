@@ -882,7 +882,7 @@ elif modul == "🔁 Statica 2 — Static Nedeterminate":
     st.title("Statica 2 — Structuri Static Nedeterminate")
     st.markdown("Calcul conform *Metoda Forțelor + Metoda Deplasărilor* (138-3.pdf)")
     st.markdown("---")
-    tip_s2=st.sidebar.selectbox("Metodă / Structură",["Grindă Continuă (Metoda Forțelor)","Cadru Nedeterminat (Metoda Forțelor)","Metoda Deplasărilor"],key="s2_tip")
+    tip_s2=st.sidebar.selectbox("Metodă / Structură",["Grindă Continuă (Metoda Forțelor)","Cadru Nedeterminat (Metoda Forțelor)","Metoda Deplasărilor","Metoda Cross (Distribuția Momentelor)","Cedări de Reazeme","Deplasări Punctuale (Mohr)"],key="s2_tip")
 
     # ---- GRINDA CONTINUA ----
     if tip_s2=="Grindă Continuă (Metoda Forțelor)":
