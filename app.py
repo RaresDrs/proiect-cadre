@@ -1089,3 +1089,251 @@ elif modul == "🔁 Statica 2 — Static Nedeterminate":
             ax_md.set_title(f"Diagramă M Finală — Metoda Deplasărilor\nq={qmd}kN/m EI_gr={EIgr:.0f} EI_st={EIst:.0f}kNm2",fontsize=12,fontweight="bold")
             plt.tight_layout(); st.pyplot(fig_md); plt.close(fig_md)
         except np.linalg.LinAlgError: st.error("Eroare numerică.")
+
+    # ---- METODA CROSS ----
+    elif tip_s2=="Metoda Cross (Distribuția Momentelor)":
+        st.header("Metoda Cross — Distribuția Momentelor")
+        with st.expander("Teorie (L10-Cross)"):
+            st.markdown("""**Algoritmul Cross (moment distribution):**
+1. Se calculează **rigidizările** k = EI/L pentru fiecare bară
+2. Se calculează **factorii de distribuție** μ = k / Σk pentru fiecare nod
+3. Se calculează **momentele de încastrare** M₀ din încărcări
+4. Se distribuie iterativ dezechilibrele nodale (factor de transfer = 1/2)
+5. Se sumează coloanele → momentele finale""")
+            st.latex(r"\mu_{ij}=\frac{k_{ij}}{\sum k}\;,\quad k_{ij}=\frac{EI_{ij}}{L_{ij}}")
+            st.latex(r"M_0^{AB}=+\frac{qL^2}{12}+\frac{PL}{8},\quad M_0^{BA}=-\frac{qL^2}{12}-\frac{PL}{8}")
+
+        st.markdown("#### Configurare Grindă Continuă pe 3 Deschideri")
+        cc1,cc2,cc3=st.columns(3)
+        with cc1:
+            Lc1=st.number_input("L1 (m)",min_value=1.0,value=5.0,step=0.5,key="cr_L1")
+            EI1=st.number_input("EI1 (kNm²)",min_value=1.0,value=10000.0,step=1000.0,key="cr_EI1")
+            q1c=st.number_input("q1 (kN/m)",min_value=0.0,value=20.0,step=1.0,key="cr_q1")
+            P1c=st.number_input("P1 la mijloc (kN)",min_value=0.0,value=0.0,step=5.0,key="cr_P1")
+        with cc2:
+            Lc2=st.number_input("L2 (m)",min_value=1.0,value=6.0,step=0.5,key="cr_L2")
+            EI2=st.number_input("EI2 (kNm²)",min_value=1.0,value=10000.0,step=1000.0,key="cr_EI2")
+            q2c=st.number_input("q2 (kN/m)",min_value=0.0,value=0.0,step=1.0,key="cr_q2")
+            P2c=st.number_input("P2 la mijloc (kN)",min_value=0.0,value=40.0,step=5.0,key="cr_P2")
+        with cc3:
+            Lc3=st.number_input("L3 (m)",min_value=1.0,value=5.0,step=0.5,key="cr_L3")
+            EI3=st.number_input("EI3 (kNm²)",min_value=1.0,value=10000.0,step=1000.0,key="cr_EI3")
+            q3c=st.number_input("q3 (kN/m)",min_value=0.0,value=15.0,step=1.0,key="cr_q3")
+            P3c=st.number_input("P3 la mijloc (kN)",min_value=0.0,value=0.0,step=5.0,key="cr_P3")
+        niter_cr=st.slider("Număr iterații Cross",2,12,6,key="cr_niter")
+
+        k1=EI1/Lc1; k2=EI2/Lc2; k3=EI3/Lc3
+        muB_A=k1/(k1+k2); muB_C=k2/(k1+k2)
+        muC_B=k2/(k2+k3); muC_D=k3/(k2+k3)
+
+        st.markdown("#### Rigidități și Factori de Distribuție")
+        cr_c1,cr_c2=st.columns(2)
+        with cr_c1:
+            st.latex(rf"k_1={k1:.3f},\; k_2={k2:.3f},\; k_3={k3:.3f}\text{{ kNm}}")
+        with cr_c2:
+            st.latex(rf"\mu_{{BA}}={muB_A:.4f},\; \mu_{{BC}}={muB_C:.4f},\; \mu_{{CB}}={muC_B:.4f},\; \mu_{{CD}}={muC_D:.4f}")
+
+        def mf_cr(q,P,L): return q*L**2/12 + P*L/8
+        M0_AB=+mf_cr(q1c,P1c,Lc1); M0_BA=-mf_cr(q1c,P1c,Lc1)
+        M0_BC=+mf_cr(q2c,P2c,Lc2); M0_CB=-mf_cr(q2c,P2c,Lc2)
+        M0_CD=+mf_cr(q3c,P3c,Lc3); M0_DC=-mf_cr(q3c,P3c,Lc3)
+
+        cols_names=["AB","BA","BC","CB","CD","DC"]
+        rows=[["Încastrare",M0_AB,M0_BA,M0_BC,M0_CB,M0_CD,M0_DC]]
+        mAB,mBA,mBC,mCB,mCD,mDC=M0_AB,M0_BA,M0_BC,M0_CB,M0_CD,M0_DC
+        for it in range(niter_cr):
+            dB=-(mBA+mBC); dC=-(mCB+mCD)
+            dBA=muB_A*dB; dBC=muB_C*dB
+            dCB=muC_B*dC; dCD=muC_D*dC
+            tAB=0.5*dBA; tBC_to_CB=0.5*dBC; tCB_to_BC=0.5*dCB; tDC=0.5*dCD
+            rows.append([f"Dist.{it+1}",0,dBA,dBC,dCB,dCD,0])
+            rows.append([f"Transf.{it+1}",tAB,0,tCB_to_BC,tBC_to_CB,0,tDC])
+            mAB+=tAB; mBA+=dBA; mBC+=dBC+tCB_to_BC; mCB+=dCB+tBC_to_CB; mCD+=dCD; mDC+=tDC
+        rows.append(["**TOTAL**",mAB,mBA,mBC,mCB,mCD,mDC])
+
+        import pandas as pd
+        df_cr=pd.DataFrame(rows,columns=["Pas"]+cols_names)
+        for col in cols_names: df_cr[col]=df_cr[col].apply(lambda v: f"{v:.4f}" if isinstance(v,float) else v)
+        st.dataframe(df_cr,use_container_width=True)
+
+        st.markdown("#### Momente Finale (kNm)")
+        fm_c1,fm_c2,fm_c3=st.columns(3)
+        fm_c1.metric("M_AB",f"{mAB:.3f}"); fm_c1.metric("M_BA",f"{mBA:.3f}")
+        fm_c2.metric("M_BC",f"{mBC:.3f}"); fm_c2.metric("M_CB",f"{mCB:.3f}")
+        fm_c3.metric("M_CD",f"{mCD:.3f}"); fm_c3.metric("M_DC",f"{mDC:.3f}")
+
+        eqB=mBA+mBC; eqC=mCB+mCD
+        eq_c1,eq_c2=st.columns(2)
+        _ = eq_c1.success(f"Echilibru B: ΣM={eqB:.4f}≈0") if abs(eqB)<0.05 else eq_c1.warning(f"Nod B: ΣM={eqB:.4f} (mai multe iterații)")
+        _ = eq_c2.success(f"Echilibru C: ΣM={eqC:.4f}≈0") if abs(eqC)<0.05 else eq_c2.warning(f"Nod C: ΣM={eqC:.4f} (mai multe iterații)")
+
+        st.markdown("#### Diagramă M Finală")
+        fig_cr,ax_cr=plt.subplots(figsize=(13,5),dpi=150)
+        Ltot_cr=Lc1+Lc2+Lc3
+        offsets=[0,Lc1,Lc1+Lc2,Ltot_cr]
+        spans=[(Lc1,q1c,P1c,mAB,mBA),(Lc2,q2c,P2c,mBC,mCB),(Lc3,q3c,P3c,mCD,mDC)]
+        ax_cr.plot([0,Ltot_cr],[0,0],"k-",lw=4)
+        draw_pin(ax_cr,0,0,size=0.15); draw_roller(ax_cr,Ltot_cr,0,size=0.15)
+        for xi in offsets[1:-1]: ax_cr.plot(xi,0,"ko",ms=8,zorder=6)
+        scM_cr=0.5/max(0.01,max(abs(mAB),abs(mBA),abs(mBC),abs(mCB),abs(mCD),abs(mDC))+0.01)
+        colors_cr=["#1f77b4","#ff7f0e","#2ca02c"]
+        for idx,(Ls,qs,Ps,Ml,Mr) in enumerate(spans):
+            x0=offsets[idx]; xs=np.linspace(0,Ls,200)
+            RL=(Mr-Ml)/Ls+qs*Ls/2+Ps/2
+            Mx=np.array([Ml+RL*x-qs*x**2/2-(Ps*(x-Ls/2) if x>Ls/2 and Ps>0 else 0) for x in xs])
+            ax_cr.fill_between(x0+xs,-Mx*scM_cr,0,alpha=0.32,color=colors_cr[idx])
+            ax_cr.plot(x0+xs,-Mx*scM_cr,color=colors_cr[idx],lw=2.2)
+            imax=np.argmax(np.abs(Mx)); ax_cr.text(x0+xs[imax],-Mx[imax]*scM_cr-0.12,f"{Mx[imax]:.2f}",ha="center",fontsize=8,color=colors_cr[idx],fontweight="bold")
+        for xi,mv in zip(offsets,[mAB]+[mBA,mBC,mCB,mCD,mDC]):
+            ax_cr.text(xi if xi==0 else xi,-mv*scM_cr+0.05,f"{mv:.2f}",ha="center",fontsize=8,color="#333",fontweight="bold")
+        ax_cr.axhline(0,color="k",lw=0.7,ls="--"); ax_cr.set_xlim(-0.5,Ltot_cr+0.5); ax_cr.axis("off")
+        ax_cr.set_title("Diagramă M — Metoda Cross",fontsize=12,fontweight="bold")
+        st.pyplot(fig_cr); plt.close(fig_cr)
+
+    # ---- CEDARI DE REAZEME ----
+    elif tip_s2=="Cedări de Reazeme":
+        st.header("Cedări de Reazeme — Metoda Deplasărilor")
+        with st.expander("Teorie (L13-cedări)"):
+            st.markdown("""**Cedările de reazeme** introduc deplasări impuse la noduri.
+În Metoda Deplasărilor, o cedare Δ la un reazem produce momente suplimentare:""")
+            st.latex(r"M_{AB}^{\Delta}=-\frac{6EI}{L^2}\Delta,\quad M_{BA}^{\Delta}=-\frac{6EI}{L^2}\Delta")
+            st.markdown("Aceste momente se adaugă la momentele din încărcări înainte de distribuție.")
+
+        st.markdown("#### Grindă Continuă 2 Deschideri cu Cedare la Reazem Intermediar")
+        cd_c1,cd_c2=st.columns(2)
+        with cd_c1:
+            Lcd1=st.number_input("L1 (m)",min_value=1.0,value=6.0,step=0.5,key="ced_L1")
+            EIcd1=st.number_input("EI (kNm²)",min_value=1.0,value=15000.0,step=1000.0,key="ced_EI")
+            qcd=st.number_input("q (kN/m) uniform pe ambele deschideri",min_value=0.0,value=25.0,step=1.0,key="ced_q")
+        with cd_c2:
+            Lcd2=st.number_input("L2 (m)",min_value=1.0,value=6.0,step=0.5,key="ced_L2")
+            delta_B=st.number_input("Cedare Δ_B la reazem B (mm, jos pozitiv)",value=10.0,step=1.0,key="ced_dB")/1000.0
+            delta_B_dir=st.selectbox("Direcție cedare",["Jos (pozitiv)","Sus (negativ)"],key="ced_dir")
+        if delta_B_dir=="Sus (negativ)": delta_B=-delta_B
+
+        EIv=EIcd1
+        icd1=EIv/Lcd1; icd2=EIv/Lcd2
+        M0_cd1=qcd*Lcd1**2/12; M0_cd2=qcd*Lcd2**2/12
+        Mced1=6*EIv/Lcd1**2*delta_B; Mced2=6*EIv/Lcd2**2*delta_B
+        R1P=-(M0_cd1-Mced1)+( M0_cd2-Mced2)
+        r11_cd=4*icd1+4*icd2
+        try:
+            phiB_cd=-R1P/r11_cd
+            MAB_cd=2*icd1*phiB_cd - M0_cd1 + Mced1
+            MBA_cd=4*icd1*phiB_cd + M0_cd1 - Mced1
+            MBC_cd=4*icd2*phiB_cd - M0_cd2 + Mced2
+            MCB_cd=2*icd2*phiB_cd + M0_cd2 - Mced2
+
+            st.markdown("#### Calcul Pas cu Pas")
+            st.latex(rf"i_1=\frac{{EI}}{{L_1}}={icd1:.3f},\quad i_2=\frac{{EI}}{{L_2}}={icd2:.3f}\text{{ kNm}}")
+            st.latex(rf"M_0^{{(1)}}=\pm{M0_cd1:.3f}\text{{ kNm}},\quad M_0^{{(2)}}=\pm{M0_cd2:.3f}\text{{ kNm}}")
+            st.latex(rf"M_{{\Delta}}^{{(1)}}=\frac{{6EI}}{{L_1^2}}\Delta_B={Mced1:.4f}\text{{ kNm}}")
+            st.latex(rf"r_{{11}}=4i_1+4i_2={r11_cd:.3f}\text{{ kNm}},\quad R_{{1P}}={R1P:.4f}\text{{ kNm}}")
+            st.latex(rf"\varphi_B=\frac{{-R_{{1P}}}}{{r_{{11}}}}={phiB_cd:.8f}\text{{ rad}}")
+
+            cols_cd=st.columns(2)
+            with cols_cd[0]:
+                st.latex(rf"M_{{AB}}={MAB_cd:.4f}\text{{ kNm}}")
+                st.latex(rf"M_{{BA}}={MBA_cd:.4f}\text{{ kNm}}")
+            with cols_cd[1]:
+                st.latex(rf"M_{{BC}}={MBC_cd:.4f}\text{{ kNm}}")
+                st.latex(rf"M_{{CB}}={MCB_cd:.4f}\text{{ kNm}}")
+            eqB_cd=MBA_cd+MBC_cd
+            _ = st.success(f"Echilibru nod B: ΣM={eqB_cd:.6f}≈0") if abs(eqB_cd)<0.01 else st.error(f"Echilibru B: ΣM={eqB_cd:.6f}")
+
+            st.markdown("#### Diagramă M Finală")
+            fig_ced,ax_ced=plt.subplots(figsize=(11,4.5),dpi=150)
+            Ltot_ced=Lcd1+Lcd2
+            ax_ced.plot([0,Ltot_ced],[0,0],"k-",lw=4)
+            draw_pin(ax_ced,0,0,0.12); draw_roller(ax_ced,Lcd1,0,0.12); draw_roller(ax_ced,Ltot_ced,0,0.12)
+            if abs(delta_B)>1e-6:
+                ax_ced.annotate("",xy=(Lcd1,-delta_B*60),xytext=(Lcd1,0),arrowprops=dict(arrowstyle="->",color="purple",lw=2))
+                ax_ced.text(Lcd1+0.1,-delta_B*30,f"Δ={delta_B*1000:.1f}mm",color="purple",fontsize=9,fontweight="bold")
+            scM_ced=0.5/max(0.01,max(abs(MAB_cd),abs(MBA_cd),abs(MBC_cd),abs(MCB_cd))+0.01)
+            for (x0,Ls,Ml,Mr,qs) in [(0,Lcd1,MAB_cd,MBA_cd,qcd),(Lcd1,Lcd2,MBC_cd,MCB_cd,qcd)]:
+                xs=np.linspace(0,Ls,200)
+                RL=(Mr-Ml)/Ls+qs*Ls/2
+                Mx=np.array([Ml+RL*x-qs*x**2/2 for x in xs])
+                ax_ced.fill_between(x0+xs,-Mx*scM_ced,0,alpha=0.35,color="#d62728")
+                ax_ced.plot(x0+xs,-Mx*scM_ced,"#d62728",lw=2.2)
+                imax=np.argmax(np.abs(Mx)); ax_ced.text(x0+xs[imax],-Mx[imax]*scM_ced-0.1,f"{Mx[imax]:.2f}",ha="center",fontsize=8,color="#d62728",fontweight="bold")
+            ax_ced.text(0,-MAB_cd*scM_ced+0.05,f"{MAB_cd:.2f}",ha="center",fontsize=9,fontweight="bold")
+            ax_ced.text(Lcd1,-MBA_cd*scM_ced+0.05,f"{MBA_cd:.2f}",ha="right",fontsize=9,fontweight="bold")
+            ax_ced.text(Lcd1,-MBC_cd*scM_ced+0.05,f"{MBC_cd:.2f}",ha="left",fontsize=9,fontweight="bold")
+            ax_ced.text(Ltot_ced,-MCB_cd*scM_ced+0.05,f"{MCB_cd:.2f}",ha="center",fontsize=9,fontweight="bold")
+            ax_ced.axhline(0,color="k",lw=0.5,ls="--"); ax_ced.set_xlim(-0.5,Ltot_ced+0.5); ax_ced.axis("off")
+            ax_ced.set_title(f"Diagramă M — Cedare Δ_B={delta_B*1000:.1f}mm",fontsize=12,fontweight="bold")
+            st.pyplot(fig_ced); plt.close(fig_ced)
+        except ZeroDivisionError: st.error("Eroare la calcul.")
+
+    # ---- DEPLASARI PUNCTUALE (MOHR) ----
+    elif tip_s2=="Deplasări Punctuale (Mohr)":
+        st.header("Deplasări Punctuale — Integrala Mohr / Teorema Unității")
+        with st.expander("Teorie (L1 — Deplasări Punctuale)"):
+            st.markdown("""**Metoda Integralelor Mohr** (principiul lucrărilor virtuale):""")
+            st.latex(r"\delta = \int_0^L \frac{\bar{M}(x) \cdot M_P(x)}{EI}\,dx")
+            st.markdown("""- **M̄(x)** = diagrama de moment de la o forță unitară virtuală în punctul/direcția deplasării
+- **Mₚ(x)** = diagrama de moment din încărcarea reală
+- Se calculează cu **regula lui Vereșciagin** (produs grafic)
+
+**Formula Vereșciagin (diagrame trapezoidale):**""")
+            st.latex(r"\int_0^L \bar{M}\cdot M_P\,dx = \frac{L}{6}(2m_1\bar{m}_1+2m_2\bar{m}_2+m_1\bar{m}_2+m_2\bar{m}_1)")
+            st.markdown("Pentru diagramă triunghiulară × dreptunghiulară: **Ω · ȳ** (aria × ordinata sub centrul ariei)")
+
+        st.markdown("#### Grindă Simplă — Săgeată și Rotire")
+        mo_c1,mo_c2=st.columns(2)
+        with mo_c1:
+            Lmo=st.number_input("Lungime L (m)",min_value=1.0,value=8.0,step=0.5,key="mo_L")
+            EImo=st.number_input("EI (kNm²)",min_value=1.0,value=20000.0,step=1000.0,key="mo_EI")
+            qmo=st.number_input("q distribuit (kN/m)",min_value=0.0,value=15.0,step=1.0,key="mo_q")
+        with mo_c2:
+            Pmo=st.number_input("Forță concentrată P (kN)",min_value=0.0,value=30.0,step=5.0,key="mo_P")
+            xPmo=st.number_input("Poziție P (m de la A)",min_value=0.0,value=float(Lmo)/2,max_value=float(Lmo),step=0.5,key="mo_xP")
+            tipmo=st.selectbox("Calcul deplasare",["Săgeată la mijloc (δ_C)","Rotire la capăt A (θ_A)","Săgeată sub forța P"],key="mo_tip")
+
+        RBmo=(qmo*Lmo**2/2+Pmo*(Lmo-xPmo))/Lmo; RAmo=qmo*Lmo+Pmo-RBmo
+        xs_mo=np.linspace(0,Lmo,400)
+        MP_mo=np.array([RAmo*x-qmo*x**2/2-(Pmo*(x-xPmo) if x>=xPmo else 0) for x in xs_mo])
+
+        if tipmo=="Săgeată la mijloc (δ_C)":
+            xv=Lmo/2
+            MB1_mo=np.array([0.5*x if x<=xv else 0.5*(Lmo-x) for x in xs_mo])
+            delta_mo=np.trapz(MB1_mo*MP_mo,xs_mo)/EImo
+            label_mo=r"\delta_C=\int_0^L\frac{\bar{M}_C\cdot M_P}{EI}dx"
+            val_label=f"δ_C = {delta_mo*1000:.4f} mm"
+        elif tipmo=="Rotire la capăt A (θ_A)":
+            MB1_mo=np.array([1-x/Lmo for x in xs_mo])
+            delta_mo=np.trapz(MB1_mo*MP_mo,xs_mo)/EImo
+            label_mo=r"\theta_A=\int_0^L\frac{\bar{M}_A\cdot M_P}{EI}dx"
+            val_label=f"θ_A = {delta_mo*1000:.4f} mrad"
+        else:
+            xv=xPmo; b=Lmo-xv
+            MB1_mo=np.array([(b/Lmo)*x if x<=xv else (xv/Lmo)*(Lmo-x) for x in xs_mo])
+            delta_mo=np.trapz(MB1_mo*MP_mo,xs_mo)/EImo
+            label_mo=r"\delta_P=\int_0^L\frac{\bar{M}_P\cdot M_P}{EI}dx"
+            val_label=f"δ_P = {delta_mo*1000:.4f} mm"
+
+        st.latex(rf"{label_mo}")
+        st.metric(val_label.split("=")[0].strip(), val_label.split("=")[1].strip())
+
+        fig_mo,(ax_mp,ax_mb)=plt.subplots(2,1,figsize=(11,7),dpi=150,sharex=True)
+        scP=0.5/max(0.01,np.max(np.abs(MP_mo))+0.01)
+        ax_mp.fill_between(xs_mo,-MP_mo*scP,0,alpha=0.38,color="#d62728"); ax_mp.plot(xs_mo,-MP_mo*scP,"#d62728",lw=2.2)
+        ax_mp.axhline(0,color="k",lw=1.5); ax_mp.set_title("Mₚ(x) — Momentul din Încărcarea Reală",fontsize=11,fontweight="bold",color="#d62728")
+        ax_mp.axis("off")
+        imax_p=np.argmax(np.abs(MP_mo)); ax_mp.text(xs_mo[imax_p],-MP_mo[imax_p]*scP-0.08,f"{MP_mo[imax_p]:.2f}kNm",ha="center",fontsize=9,color="#d62728",fontweight="bold")
+        scB=0.5/max(0.01,np.max(np.abs(MB1_mo))+0.01)
+        ax_mb.fill_between(xs_mo,-MB1_mo*scB,0,alpha=0.32,color="#1f77b4"); ax_mb.plot(xs_mo,-MB1_mo*scB,"#1f77b4",lw=2.2)
+        ax_mb.axhline(0,color="k",lw=1.5); ax_mb.set_title("M̄(x) — Momentul Virtual (forță unitară)",fontsize=11,fontweight="bold",color="#1f77b4")
+        ax_mb.set_xlabel("x (m)",fontsize=11); ax_mb.axis("off")
+        ax_mb.text(xs_mo[len(xs_mo)//2],-MB1_mo[len(xs_mo)//2]*scB-0.08,f"max={np.max(MB1_mo):.3f}",ha="center",fontsize=9,color="#1f77b4",fontweight="bold")
+        plt.tight_layout(); st.pyplot(fig_mo); plt.close(fig_mo)
+
+        if qmo>0 and Pmo==0:
+            st.markdown("#### Verificare Analitică (formula clasică pentru q uniform)")
+            if tipmo=="Săgeată la mijloc (δ_C)":
+                delta_ana=5*qmo*Lmo**4/(384*EImo)
+                st.latex(rf"\delta_C=\frac{{5qL^4}}{{384EI}}=\frac{{5\times{qmo}\times{Lmo:.0f}^4}}{{384\times{EImo:.0f}}}={delta_ana*1000:.4f}\text{{ mm}}")
+            elif tipmo=="Rotire la capăt A (θ_A)":
+                theta_ana=qmo*Lmo**3/(24*EImo)
+                st.latex(rf"\theta_A=\frac{{qL^3}}{{24EI}}={theta_ana*1000:.4f}\text{{ mrad}}")

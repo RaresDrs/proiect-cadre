@@ -901,7 +901,7 @@ elif modul == "\U0001f501 Statica 2 \u2014 Static Nedeterminate":
     st.title("Statica 2 \u2014 Structuri Static Nedeterminate")
     st.markdown("Calcul conform *Metoda For\u021belor + Metoda Deplas\u0103rilor* (138-3.pdf)")
     st.markdown("---")
-    tip_s2=st.sidebar.selectbox("Metod\u0103 / Structur\u0103",["Grind\u0103 Continu\u0103 (Metoda For\u021belor)","Cadru Nedeterminat (Metoda For\u021belor)","Metoda Deplas\u0103rilor"],key="s2_tip")
+    tip_s2=st.sidebar.selectbox("Metod\u0103 / Structur\u0103",["Grind\u0103 Continu\u0103 (Metoda For\u021belor)","Cadru Nedeterminat (Metoda For\u021belor)","Metoda Deplas\u0103rilor","Metoda Cross (Distribu\u021bia Momentelor)","Ced\u0103ri de Reazeme","Deplas\u0103ri Punctuale (Mohr)"],key="s2_tip")
 
     # ---- GRINDA CONTINUA ----
     if tip_s2=="Grind\u0103 Continu\u0103 (Metoda For\u021belor)":
