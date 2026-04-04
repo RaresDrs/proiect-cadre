@@ -400,7 +400,19 @@ if modul == "🔧 Calcul 2D Grinzi":
                 fig_r,(aN,aV,aM)=plt.subplots(3,1,figsize=(13,11),sharex=True,dpi=180)
                 fill_diagram(aN,xa,Na,"#1a6faf","N (kN)"); aN.set_title("N(x) — Efort axial",fontweight="bold",color="#1a6faf"); label_extremes(aN,xa,Na,"#1a6faf")
                 fill_diagram(aV,xa,Va,"#2ca02c","T (kN)"); aV.set_title("T(x) — Forță tăietoare",fontweight="bold",color="#2ca02c"); label_extremes(aV,xa,Va,"#2ca02c")
-                fill_diagram(aM,xa,Ma,"#d62728","M (kNm)"); aM.set_title("M(x) — Moment încovoietor [fibra întinsă jos]",fontweight="bold",color="#d62728"); aM.invert_yaxis(); label_extremes(aM,xa,Ma,"#d62728")
+                # M diagram: convenție română + jos (fibra întinsă jos)
+                aM.fill_between(xa,-Ma,0,color="#d62728",alpha=0.32); aM.plot(xa,-Ma,color="#d62728",lw=2.2)
+                aM.axhline(0,color='black',lw=1.2); aM.set_ylabel("M (kNm)",color="#d62728",fontweight='bold',fontsize=10)
+                aM.grid(True,alpha=0.18,linestyle='--'); aM.spines['top'].set_visible(False); aM.spines['right'].set_visible(False)
+                aM.set_title("M(x) — Moment încovoietor  [+ jos · − sus]",fontweight="bold",color="#d62728")
+                _shown=set()
+                for _i in [int(np.argmax(Ma)),int(np.argmin(Ma)),0,len(Ma)-1]:
+                    _v=Ma[_i]
+                    if abs(_v)<1e-6 or round(_v,3) in _shown: continue
+                    _shown.add(round(_v,3))
+                    aM.annotate(f'{_v:.3f}',xy=(xa[_i],-_v),fontsize=8,color="#d62728",fontweight='bold',
+                                ha='center',va='bottom' if _v>=0 else 'top',
+                                bbox=dict(fc='white',alpha=0.75,ec='none',pad=1.5))
 
                 # Mmax unde T=0
                 sign_ch=np.where(np.diff(np.sign(Va)))[0]
