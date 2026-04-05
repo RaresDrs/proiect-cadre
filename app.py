@@ -183,6 +183,35 @@ def label_extremes(ax,x_arr,y_arr,color='black'):
                     ha='center',va='bottom' if val>=0 else 'top',
                     bbox=dict(fc='white',alpha=0.75,ec='none',pad=1.5))
 
+def draw_ntm_on_frame(ax, bars, color, scale, alpha=0.35, label_vals=True):
+    """Draw filled N/T/M diagram on arbitrary frame bars.
+    bars: list of dicts with keys x1,y1,x2,y2,values (np.array)."""
+    for bar in bars:
+        x1,y1,x2,y2=bar['x1'],bar['y1'],bar['x2'],bar['y2']
+        vals=bar['values']
+        n=len(vals)
+        dx,dy=x2-x1,y2-y1
+        L=np.sqrt(dx**2+dy**2)
+        if L<1e-9: continue
+        c_b,s_b=dx/L,dy/L
+        nx,ny=-s_b,c_b
+        t=np.linspace(0,1,n)
+        bx=x1+t*dx; by=y1+t*dy
+        px=bx+vals*scale*nx; py=by+vals*scale*ny
+        ax.plot([x1,x2],[y1,y2],'k-',lw=3.5,zorder=3)
+        ax.plot(px,py,color=color,lw=2,zorder=4)
+        fill_x=np.concatenate([bx,px[::-1]])
+        fill_y=np.concatenate([by,py[::-1]])
+        ax.fill(fill_x,fill_y,color=color,alpha=alpha,zorder=2)
+        if label_vals:
+            for idx in [0,n-1,int(np.argmax(vals)),int(np.argmin(vals))]:
+                v=vals[idx]
+                if abs(v)<1e-4: continue
+                off=scale*0.15 if v>=0 else -scale*0.15
+                ax.text(px[idx]+off*nx,py[idx]+off*ny,f'{v:.2f}',
+                        color=color,fontsize=7.5,fontweight='bold',ha='center',va='center',
+                        bbox=dict(fc='white',alpha=0.85,ec=color,lw=0.5,boxstyle='round,pad=0.15'))
+
 # ============================================================
 # NAVIGARE
 # ============================================================
