@@ -70,23 +70,31 @@ def draw_fixed_left(ax,x,y_bot,height,size=0.3,color='k'):
         ax.plot([x-size*0.9,x],[yy-size*0.35,yy],color=color,lw=1,zorder=4)
 
 def draw_axes(ax,ox,oy,length=0.8,color='gray',fontsize=8):
-    ax.annotate('',xy=(ox+length,oy),xytext=(ox,oy),arrowprops=dict(arrowstyle='->',color=color,lw=1.2))
-    ax.text(ox+length+0.06,oy,'x',color=color,fontsize=fontsize,va='center')
-    ax.annotate('',xy=(ox,oy+length),xytext=(ox,oy),arrowprops=dict(arrowstyle='->',color=color,lw=1.2))
-    ax.text(ox,oy+length+0.06,'y',color=color,fontsize=fontsize,ha='center')
+    hw=length*0.12; hl=length*0.15
+    # x-axis arrow
+    ax.arrow(ox,oy,length-hl,0,head_width=hw,head_length=hl,fc=color,ec=color,lw=1.3,zorder=8)
+    ax.text(ox+length+0.08,oy,'x',color=color,fontsize=fontsize,fontweight='bold',va='center')
+    # y-axis arrow
+    ax.arrow(ox,oy,0,length-hl,head_width=hw,head_length=hl,fc=color,ec=color,lw=1.3,zorder=8)
+    ax.text(ox,oy+length+0.08,'y',color=color,fontsize=fontsize,fontweight='bold',ha='center')
+    # origin dot
+    ax.plot(ox,oy,'o',color=color,markersize=3,zorder=9)
 
-def draw_force_arrow(ax,x,y,fx,fy,label,color='red',scale=0.8,lw=1.8):
+def draw_force_arrow(ax,x,y,fx,fy,label,color='red',scale=0.8,lw=1.8, txt_offset=(0,0), txt_lx=None, txt_ly=None):
     mag=np.sqrt(fx**2+fy**2)
     if mag<1e-10: return
     ux,uy=fx/mag,fy/mag
     ax.annotate('',xy=(x,y),xytext=(x-ux*scale,y-uy*scale),
-                arrowprops=dict(arrowstyle='->',color=color,lw=lw,mutation_scale=12))
-    # Label: at midpoint of arrow + perpendicular nudge (avoids overlap with tip/tail)
-    perp_x,perp_y=-uy,ux
-    lx=x-ux*scale*0.5+perp_x*scale*0.55
-    ly=y-uy*scale*0.5+perp_y*scale*0.55
+                arrowprops=dict(arrowstyle='->',color=color,lw=lw,mutation_scale=14))
+    if txt_lx is not None and txt_ly is not None:
+        lx, ly = txt_lx, txt_ly
+    else:
+        perp_x,perp_y=-uy,ux
+        lx=x-ux*scale*0.5+perp_x*scale*0.65 + txt_offset[0]
+        ly=y-uy*scale*0.5+perp_y*scale*0.65 + txt_offset[1]
     ax.text(lx,ly,label,color=color,fontsize=7.5,fontweight='bold',
-            ha='center',va='center',bbox=dict(fc='white',alpha=0.88,ec=color,lw=0.5,pad=1.2,boxstyle='round,pad=0.2'))
+            ha='center',va='center',bbox=dict(fc='white',alpha=0.9,ec=color,lw=0.6,boxstyle='round,pad=0.2'))
+
 
 def draw_distributed_load(ax,x1,x2,y,q,label='q',color='#2255cc',n_arrows=8):
     if x2<=x1: return
@@ -157,11 +165,11 @@ def fill_diagram(ax,x,y,color,label,alpha=0.32,sign_labels=True):
     ax.grid(True,alpha=0.18,linestyle='--'); ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
     if sign_labels:
         ymax=np.max(y); ymin=np.min(y)
-        x_left=x[0]; x_range=x[-1]-x[0]
+        x_mid=(x[0]+x[-1])/2
         if ymax>1e-6:
-            ax.text(x_left-x_range*0.01,ymax*0.15,"+",fontsize=9,color=color,alpha=0.55,fontweight='bold',va='center',ha='right')
+            ax.text(x_mid,ymax*0.5,"+",fontsize=14,color=color,alpha=0.55,fontweight='bold',va='center',ha='center')
         if ymin<-1e-6:
-            ax.text(x_left-x_range*0.01,ymin*0.15,"−",fontsize=9,color=color,alpha=0.55,fontweight='bold',va='center',ha='right')
+            ax.text(x_mid,ymin*0.5,"−",fontsize=14,color=color,alpha=0.55,fontweight='bold',va='center',ha='center')
 
 def label_extremes(ax,x_arr,y_arr,color='black'):
     shown=set()
@@ -323,16 +331,16 @@ if modul == "Calcul Grinzi simplu":
         lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
         if s["tip"]==1:
             draw_pin(ax1,sx_g,sy_g,ss)
-            ax1.text(sx_g,sy_g-ss*2.4,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
-                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.25"))
+            ax1.text(sx_g-ss*1.2,sy_g-ss*1.5,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.2"))
         elif s["tip"]==2:
             draw_roller(ax1,sx_g,sy_g,ss)
-            ax1.text(sx_g,sy_g-ss*3.2,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
-                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.25"))
+            ax1.text(sx_g-ss*1.2,sy_g-ss*2.2,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.2"))
         elif s["tip"]==3:
             draw_fixed_bottom(ax1,sx_g,sy_g,c_ang,s_ang,ss)
-            ax1.text(sx_g-c_ang*ss*1.2,sy_g-s_ang*ss*1.2-ss*0.8,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
-                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.25"))
+            ax1.text(sx_g-c_ang*ss*1.2-ss*1.0,sy_g-s_ang*ss*1.2-ss*1.0,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.2"))
 
     # Draw q perpendicular to bar (no label — label goes below beam separately)
     if q_abs>0 and q_end>q_start:
@@ -489,16 +497,16 @@ if modul == "Calcul Grinzi simplu":
                     lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
                     if s["tip"]==1:
                         draw_pin(ax_reac,sx_g,sy_g,ss)
-                        ax_reac.text(sx_g,sy_g-ss*2.4,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
-                                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.22"))
+                        ax_reac.text(sx_g-ss*1.2,sy_g-ss*1.5,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.2"))
                     elif s["tip"]==2:
                         draw_roller(ax_reac,sx_g,sy_g,ss)
-                        ax_reac.text(sx_g,sy_g-ss*3.2,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
-                                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.22"))
+                        ax_reac.text(sx_g-ss*1.2,sy_g-ss*2.2,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.2"))
                     elif s["tip"]==3:
                         draw_fixed_bottom(ax_reac,sx_g,sy_g,c_ang,s_ang,ss*0.75)
-                        ax_reac.text(sx_g-c_ang*ss*1.2,sy_g-s_ang*ss*1.2-ss*0.8,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
-                                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.22"))
+                        ax_reac.text(sx_g-c_ang*ss*1.2-ss*1.0,sy_g-s_ang*ss*1.2-ss*1.0,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.2"))
 
                 # Încărcări aplicate — q fără label (R va arăta valoarea)
                 if q_abs>0 and q_end>q_start:
@@ -558,29 +566,45 @@ if modul == "Calcul Grinzi simplu":
                     VA_v=R_g[base+1] if s["tip"] in [1,2,3] else 0.0
                     MA_v=R_g[base+2] if s["tip"]==3 else 0.0
 
-                    # VA: global Y — origin direct sub nod (global frame), vizibil la orice inclinare
-                    va_drop=ss*3.0+abs(s_ang)*ss*2.0  # extra drop for inclined beams
-                    va_ox=sx_g; va_oy=sy_g-va_drop
-                    if abs(VA_v)>1e-4:
-                        draw_force_arrow(ax_reac,va_ox,va_oy,
-                                         0,VA_v,f"V{lbl}={VA_v:.2f}kN",
-                                         color=_cV,scale=_rsc_arr)
+                    arr_scale = _rsc_arr * 1.5
+                    is_left = (s["x"] <= L/2)
 
-                    # HA: global X — origin lateral față de nod (stânga/dreapta)
-                    ha_side=-1.0 if HA_v>=0 else 1.0  # tail to left if arrow →
-                    ha_ox=sx_g+ha_side*_rsc_arr*1.1; ha_oy=sy_g+c_ang*ss*1.0
+                    # VA: săgeată mare, text în dreapta
+                    if abs(VA_v)>1e-4:
+                        if VA_v > 0:
+                            v_tip_y = sy_g - ss*1.0
+                            v_tail_y = v_tip_y - arr_scale
+                        else:
+                            v_tip_y = sy_g - ss*1.0 - arr_scale
+                            v_tail_y = sy_g - ss*1.0
+                        v_txt_x = sx_g + ss*1.5
+                        v_txt_y = (v_tip_y + v_tail_y)/2
+                        draw_force_arrow(ax_reac, sx_g, v_tip_y,
+                                         0, VA_v, f"V{lbl}={VA_v:.2f}kN",
+                                         color=_cV, scale=arr_scale, lw=2.2, txt_lx=v_txt_x, txt_ly=v_txt_y)
+
+                    # HA: săgeată din exterior, text deasupra ei
                     if abs(HA_v)>1e-4:
-                        draw_force_arrow(ax_reac,ha_ox,ha_oy,
-                                         HA_v,0,f"H{lbl}={HA_v:.2f}kN",
-                                         color=_cH,scale=_rsc_arr)
+                        if is_left:
+                            h_tip_x = sx_g - ss*1.2 if HA_v > 0 else sx_g - ss*1.2 - arr_scale
+                            h_tail_x = h_tip_x - arr_scale if HA_v > 0 else h_tip_x + arr_scale
+                        else:
+                            h_tip_x = sx_g + ss*1.2 + arr_scale if HA_v > 0 else sx_g + ss*1.2
+                            h_tail_x = h_tip_x - arr_scale if HA_v > 0 else h_tip_x + arr_scale
+                        h_txt_x = (h_tip_x + h_tail_x)/2
+                        h_txt_y = sy_g + ss*1.4
+                        draw_force_arrow(ax_reac, h_tip_x, sy_g,
+                                         HA_v, 0, f"H{lbl}={HA_v:.2f}kN",
+                                         color=_cH, scale=arr_scale, lw=2.2, txt_lx=h_txt_x, txt_ly=h_txt_y)
 
                     # MA: mic arc
                     if abs(MA_v)>1e-4:
-                        draw_moment_arc(ax_reac,sx_g,sy_g,MA_v,r=ss*0.95,color=_cM)
-                        ax_reac.text(sx_g+ss*1.7,sy_g+ss*0.4,
+                        draw_moment_arc(ax_reac,sx_g,sy_g,MA_v,r=ss*1.5,color=_cM)
+                        m_txt_x = sx_g - ss*1.8 if is_left else sx_g + ss*1.8
+                        ax_reac.text(m_txt_x, sy_g+ss*2.5,
                                      f"M{lbl}={MA_v:.2f}kNm",fontsize=7.5,color=_cM,fontweight="bold",
-                                     bbox=dict(fc="white",alpha=0.9,ec=_cM,lw=0.5,pad=1.0,
-                                               boxstyle="round,pad=0.2"))
+                                     bbox=dict(fc="white",alpha=0.95,ec=_cM,lw=0.6,
+                                               boxstyle="round,pad=0.2"), ha='center', va='center')
 
                 # Cotare: segmente sus, L jos
                 _draw_dim_line(ax_reac,0,0,end_x,end_y,f"L = {L:.2f} m",
@@ -620,10 +644,10 @@ if modul == "Calcul Grinzi simplu":
 
                 # --- DIAGRAME N, T, M ---
                 fig_r,(aN,aV,aM)=plt.subplots(3,1,figsize=(13,11),sharex=True,dpi=180)
-                fill_diagram(aN,xa,Na,"#1a6faf","N (kN)"); aN.set_title("N(x) — Efort axial",fontweight="bold",color="#1a6faf"); label_extremes(aN,xa,Na,"#1a6faf")
+                fill_diagram(aN,xa,Na,"#1a6faf","N (kN)",sign_labels=False); aN.set_title("N(x) — Efort axial",fontweight="bold",color="#1a6faf"); label_extremes(aN,xa,Na,"#1a6faf")
                 if np.max(Na)>0.01: aN.text(xa[np.argmax(Na)],Na[np.argmax(Na)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#1a6faf",alpha=0.75)
                 if np.min(Na)<-0.01: aN.text(xa[np.argmin(Na)],Na[np.argmin(Na)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#1a6faf",alpha=0.75)
-                fill_diagram(aV,xa,Va,"#2ca02c","T (kN)"); aV.set_title("T(x) — Forță tăietoare",fontweight="bold",color="#2ca02c"); label_extremes(aV,xa,Va,"#2ca02c")
+                fill_diagram(aV,xa,Va,"#2ca02c","T (kN)",sign_labels=False); aV.set_title("T(x) — Forță tăietoare",fontweight="bold",color="#2ca02c"); label_extremes(aV,xa,Va,"#2ca02c")
                 if np.max(Va)>0.01: aV.text(xa[np.argmax(Va)],Va[np.argmax(Va)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#2ca02c",alpha=0.75)
                 if np.min(Va)<-0.01: aV.text(xa[np.argmin(Va)],Va[np.argmin(Va)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#2ca02c",alpha=0.75)
                 # M diagram: convenție română + jos (fibra întinsă jos)
@@ -862,14 +886,14 @@ if modul == "Calcul Grinzi simplu":
                 st.download_button("Descarcă PDF",buf.getvalue(),"Grinzi2D.pdf","application/pdf",key="gv_dl")
                 plt.close(fig_r)
             except np.linalg.LinAlgError:
-                st.error("🔴 MECANISM! Matricea de rigiditate e singulară — verifică reazemele.")
+                st.error("MECANISM! Matricea de rigiditate e singulară — verifică reazemele.")
             except Exception as ex:
                 st.error(f"Eroare: {ex}")
 
 # ============================================================
 # MODUL 2: REZISTENTA MATERIALELOR
 # ============================================================
-elif modul == "📐 Rezistența Materialelor":
+elif modul == "Rezistența Materialelor":
     st.title("Rezistența Materialelor I")
     st.markdown("Calcule conform *Rezistența Materialelor I* (481-0.pdf)")
     st.markdown("---")
@@ -1069,7 +1093,7 @@ elif modul == "📐 Rezistența Materialelor":
 # ============================================================
 # MODUL 3: STATICA 1
 # ============================================================
-elif modul == "📏 Statica 1 — Static Determinate":
+elif modul == "Statica 1 — Static Determinate":
     st.title("Statica 1 — Structuri Static Determinate")
     st.markdown("Calcul conform *Statica — Structuri Static Determinate* (975-4.pdf)")
     st.markdown("---")
@@ -1452,7 +1476,7 @@ elif modul == "📏 Statica 1 — Static Determinate":
 # ============================================================
 # MODUL 4: STATICA 2
 # ============================================================
-elif modul == "🔁 Statica 2 — Static Nedeterminate":
+elif modul == "Statica 2 — Static Nedeterminate":
     st.title("Statica 2 — Structuri Static Nedeterminate")
     st.markdown("Calcul conform *Metoda Forțelor + Metoda Deplasărilor* (138-3.pdf)")
     st.markdown("---")
