@@ -408,7 +408,8 @@ if modul == "🔧 Calcul 2D Grinzi":
                 for f in st.session_state.gv_forces:
                     ni=nidx(f.get("dist",0)); base=3*ni
                     if f["tip"]=="F":
-                        F_g[base]+=f.get("fx",0.0); F_g[base+1]+=f.get("fy",0.0)
+                        fx_f,fy_f=_force_xy(f)
+                        F_g[base]+=fx_f; F_g[base+1]+=fy_f
                     else: F_g[base+2]+=f.get("val",0)
 
                 # Boundary conditions
@@ -581,8 +582,8 @@ if modul == "🔧 Calcul 2D Grinzi":
                 Fy_sum=sum(R_g[3*nidx(s["x"])+1] for s in st.session_state.gv_sup if s["tip"] in [1,2,3])
                 for f in st.session_state.gv_forces:
                     if f["tip"]=="F":
-                        Fx_sum+=f.get("fx",0.0)
-                        Fy_sum+=f.get("fy",0.0)
+                        fx_f,fy_f=_force_xy(f)
+                        Fx_sum+=fx_f; Fy_sum+=fy_f
                 if q_abs>0: Fy_sum+=(-q_eff)*(q_end-q_start)*c_ang  # global y from perp q
 
                 eq1,eq2=st.columns(2)
