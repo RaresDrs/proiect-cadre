@@ -352,7 +352,7 @@ if modul == "🔧 Calcul 2D Grinzi":
     st.pyplot(fig1); plt.close(fig1)
 
     st.markdown("---")
-    if st.button("▶ Efectuează Calculul",type="primary",use_container_width=True,key="gv_calc"):
+    if st.button("▶ Efectuează Calculul",type="primary",width="stretch",key="gv_calc"):
         if A_sec==0: st.error("Introduceți secțiunea.")
         elif G_val<0: st.error("Structura este un mecanism! Adaugă reazeme.")
         else:
@@ -1518,7 +1518,7 @@ elif modul == "🔁 Statica 2 — Static Nedeterminate":
         import pandas as pd
         df_cr=pd.DataFrame(rows,columns=["Pas"]+cols_names)
         for col in cols_names: df_cr[col]=df_cr[col].apply(lambda v: f"{v:.4f}" if isinstance(v,float) else v)
-        st.dataframe(df_cr,use_container_width=True)
+        st.dataframe(df_cr,width="stretch")
 
         st.markdown("#### Momente Finale (kNm)")
         fm_c1,fm_c2,fm_c3=st.columns(3)

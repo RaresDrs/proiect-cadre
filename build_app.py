@@ -227,7 +227,7 @@ if modul == "\U0001f527 Calcul 2D FEM":
     st.pyplot(fig1); plt.close(fig1)
 
     st.markdown("---")
-    if st.button("Efectueaz\u0103 Calculul FEM",type="primary",use_container_width=True,key="fem_calc_btn"):
+    if st.button("Efectueaz\u0103 Calculul FEM",type="primary",width="stretch",key="fem_calc_btn"):
         if A_sec==0: st.error("Introduce\u021bi sec\u021biunea.")
         else:
             try:
