@@ -244,9 +244,9 @@ if modul == "Calcul Grinzi simplu":
     # Static determinacy
     total_r=sum([2 if s["tip"]==1 else 1 if s["tip"]==2 else 3 if s["tip"]==3 else 0 for s in st.session_state.gv_sup])
     G_val=total_r-3
-    if G_val==0: st.success(f"✅ Structură **static determinată** (ns=0) — {total_r} reacțiuni, 3 ecuații")
-    elif G_val>0: st.warning(f"⚠️ **Static nedeterminată** ns={G_val} — {total_r} reacțiuni")
-    else: st.error(f"🔴 **MECANISM!** G={G_val} — structura instabilă")
+    if G_val==0: st.success(f"Structură **static determinată** (ns=0) — {total_r} reacțiuni, 3 ecuații")
+    elif G_val>0: st.warning(f"**Static nedeterminată** ns={G_val} — {total_r} reacțiuni")
+    else: st.error(f"**MECANISM!** G={G_val} — structura instabilă")
 
     # --- INCARCARI ---
     st.subheader("Încărcări distribuite q")
@@ -468,7 +468,7 @@ if modul == "Calcul Grinzi simplu":
                     Mx=Ms+Vs*xs+qyl_loc*xs**2/2 if hq else Ms+Vs*xs
                     x_pl.extend(nodes_s[i]+xs); N_pl.extend(Nx); V_pl.extend(Vx); M_pl.extend(Mx)
 
-                st.success("✅ Calcul finalizat!")
+                st.success("Calcul finalizat!")
                 xa=np.array(x_pl); Va=np.array(V_pl); Ma=np.array(M_pl); Na=np.array(N_pl)
 
                 # --- REACTIUNI frumos ---
@@ -613,8 +613,8 @@ if modul == "Calcul Grinzi simplu":
                 if q_abs>0: Fy_sum+=(-q_eff)*(q_end-q_start)*c_ang  # global y from perp q
 
                 eq1,eq2=st.columns(2)
-                _ = eq1.success(f"ΣFx={Fx_sum:.4f}≈0 ✅") if abs(Fx_sum)<0.05 else eq1.warning(f"ΣFx={Fx_sum:.4f}")
-                _ = eq2.success(f"ΣFy={Fy_sum:.4f}≈0 ✅") if abs(Fy_sum)<0.05 else eq2.warning(f"ΣFy={Fy_sum:.4f}")
+                _ = eq1.success(f"ΣFx={Fx_sum:.4f} ≈ 0") if abs(Fx_sum)<0.05 else eq1.warning(f"ΣFx={Fx_sum:.4f}")
+                _ = eq2.success(f"ΣFy={Fy_sum:.4f} ≈ 0") if abs(Fy_sum)<0.05 else eq2.warning(f"ΣFy={Fy_sum:.4f}")
 
                 st.metric("Săgeată maximă",f"{np.max(np.abs(U_loc[1::3]))*1000:.4f} mm")
 
