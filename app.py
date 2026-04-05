@@ -1326,68 +1326,692 @@ elif modul == "Statica 1 — Static Determinate":
 
     # ---- CADRU PORTAL ----
     elif tip_struct=="Cadru Portal":
-        st.header("Cadru Portal Static Determinat")
-        with st.expander("Teorie (975-4.pdf, Cap.3)"):
-            st.latex(r"\text{Stâlp stâng: }M(y)=H_A y,\; \text{Grindă: }M(x)=V_Ax-\frac{qx^2}{2}")
-        c1,c2=st.columns(2)
-        with c1:
-            Hc=st.number_input("Înălțime stâlpi h(m)",min_value=0.5,value=4.0,step=0.5,key="cad_H")
-            Lc=st.number_input("Deschidere L(m)",min_value=0.5,value=6.0,step=0.5,key="cad_L")
-            qgc=st.number_input("q grindă(kN/m)",min_value=0.0,value=20.0,step=1.0,key="cad_q")
-        with c2:
-            Hvant=st.number_input("Forță orizontală H(kN)",value=10.0,step=1.0,key="cad_H2")
-            Pc=st.number_input("P grindă(kN)",min_value=0.0,value=0.0,step=5.0,key="cad_P")
-            aPc=st.number_input("Poz P de la stâng(m)",min_value=0.0,value=float(Lc)/2,key="cad_aP")
-            tipc=st.selectbox("Rezemare",["Articulație A + Articulație B","Încastrare A + Articulație B"],key="cad_tip")
-        Qgc=qgc*Lc
-        if "Articulație A" in tipc: VBc=(Qgc*Lc/2+Pc*aPc-Hvant*Hc)/Lc; HAc=Hvant; HBc=0.0; MAc=0.0
-        else: VBc=(Qgc*Lc/2+Pc*aPc-Hvant*Hc/2)/Lc; HAc=Hvant; HBc=0.0; MAc=Hvant*Hc/2
-        VAc=Qgc+Pc-VBc
+        st.header("Cadre Plane Static Determinate")
+        with st.expander("Teorie (975-4.pdf, Cap.3 — Noțiuni de baza)"):
+            st.markdown("""
+**Nodul rigid** — 3 grade de libertate (2 translatii + 1 rotire). Tangentele la axele deformate
+pastreaza unghiurile initiale. Nu permite rotiri relative intre capetele barelor.
 
-        st.markdown("### Pasul 1 — Schema Cadrului cu Reacțiuni")
-        fig_cad,ax_cad=plt.subplots(figsize=(10,9),dpi=150)
-        ax_cad.plot([0,0],[0,Hc],"k-",lw=5.5,zorder=3); ax_cad.plot([Lc,Lc],[0,Hc],"k-",lw=5.5,zorder=3); ax_cad.plot([0,Lc],[Hc,Hc],"k-",lw=5.5,zorder=3)
-        sc=max(0.15,Lc*0.028)
-        if "Articulație A" in tipc: draw_pin(ax_cad,0,0,sc)
-        else: draw_fixed_bottom(ax_cad,0,0,sc)
-        draw_pin(ax_cad,Lc,0,sc)
-        ax_cad.text(-sc*3,-sc*3,"A",fontsize=13,fontweight="bold",ha="center"); ax_cad.text(Lc+sc,-sc*3,"B",fontsize=13,fontweight="bold",ha="center")
-        if qgc>0: draw_distributed_load(ax_cad,0,Lc,Hc,qgc,f"q={qgc}",n_arrows=8)
-        if Pc>0: draw_force_arrow(ax_cad,aPc,Hc,0,1,f"P={Pc}kN","darkred",scale=sc*5)
-        if Hvant>0: draw_force_arrow(ax_cad,0,Hc*0.6,1,0,f"H={Hvant}kN","#8B4513",scale=sc*5)
-        src=max(0.55,Hc*0.16)
-        if abs(VAc)>0.01: ax_cad.annotate("",xy=(0,0),xytext=(0,-src),arrowprops=dict(arrowstyle="->",color="red",lw=2.5,mutation_scale=14)); ax_cad.text(-sc*6,-src*0.6,f"VA={VAc:.3f}kN",color="red",fontsize=9)
-        if abs(VBc)>0.01: ax_cad.annotate("",xy=(Lc,0),xytext=(Lc,-src),arrowprops=dict(arrowstyle="->",color="red",lw=2.5,mutation_scale=14)); ax_cad.text(Lc+sc*0.8,-src*0.6,f"VB={VBc:.3f}kN",color="red",fontsize=9)
-        if abs(HAc)>0.01: ax_cad.annotate("",xy=(0,0),xytext=(-src,0),arrowprops=dict(arrowstyle="->",color="#1a6faf",lw=2.5,mutation_scale=14)); ax_cad.text(-src*1.7,sc*1.5,f"HA={HAc:.3f}kN",color="#1a6faf",fontsize=9)
-        ax_cad.set_aspect("equal"); ax_cad.set_xlim(-sc*14,Lc+sc*14); ax_cad.set_ylim(-sc*10,Hc+sc*16); ax_cad.axis("off")
-        ax_cad.set_title("Cadru Portal — Schema cu Reacțiuni",fontsize=13,fontweight="bold"); st.pyplot(fig_cad); plt.close(fig_cad)
+**Nodul articulat** — 2 grade de libertate (2 translatii). Nu transmite moment incovoietor,
+permite rotire relativa.
 
-        st.markdown("### Pasul 2 — Ecuații Echilibru")
-        cc1,cc2=st.columns(2)
-        with cc1: st.latex(r"\sum M_A=0:\; V_B L=Q L/2+P a-H h"); st.latex(r"\sum F_x=0:\; H_A+H_B=H_{ext}")
-        with cc2: st.latex(rf"V_B={VBc:.4f}\text{{ kN}},\; V_A={VAc:.4f}\text{{ kN}},\; H_A={HAc:.4f}\text{{ kN}}")
+**Cadre simplu rezemate:** 3 ecuatii de echilibru (ΣFx=0, ΣFy=0, ΣM=0).
 
-        yst=np.linspace(0,Hc,200); Mstg=HAc*yst; Mstd=HBc*yst; xgr=np.linspace(0,Lc,400)
-        Mgr=np.zeros_like(xgr); Ngr=-HAc*np.ones_like(xgr)
-        for i,x in enumerate(xgr): Mgr[i]=VAc*x-qgc*x**2/2-(Pc*(x-aPc) if x>aPc else 0)
-        scM=0.15/max(0.01,max(np.max(np.abs(Mstg)),np.max(np.abs(Mgr)),0.1))
-        fig_cd,axes_cd=plt.subplots(1,3,figsize=(15,8),dpi=150)
-        tl=["N(kN)","T(kN)","M(kNm)"]; cls=["#1a6faf","#2ca02c","#d62728"]
-        Nstg=-VAc*np.ones_like(yst); Nstd=-VBc*np.ones_like(yst)
-        Tstg=HAc*np.ones_like(yst); Tstd=HBc*np.ones_like(yst); Tgr=VAc-qgc*xgr-(Pc*np.heaviside(xgr-aPc,0.5) if Pc>0 else 0.0)
-        scN=0.08/max(0.01,max(abs(Nstg[0]),abs(Nstd[0]),0.1)); scT=0.12/max(0.01,max(abs(Tstg[0]),0.1))
-        for axf in axes_cd:
-            axf.plot([0,0],[0,Hc],"k-",lw=3); axf.plot([Lc,Lc],[0,Hc],"k-",lw=3); axf.plot([0,Lc],[Hc,Hc],"k-",lw=3)
-            draw_pin(axf,0,0,sc*0.6); draw_pin(axf,Lc,0,sc*0.6); axf.set_aspect("equal"); axf.axis("off")
-        axes_cd[0].set_title("N(kN)",fontweight="bold",color=cls[0]); axes_cd[0].fill_betweenx(yst,Nstg*scN,0,color=cls[0],alpha=0.35); axes_cd[0].fill_betweenx(yst,Lc+Nstd*scN,Lc,color=cls[0],alpha=0.35); axes_cd[0].fill_between(xgr,Hc+Ngr*scN,Hc,color=cls[0],alpha=0.35)
-        axes_cd[1].set_title("T(kN)",fontweight="bold",color=cls[1]); axes_cd[1].fill_betweenx(yst,Tstg*scT,0,color=cls[1],alpha=0.35); axes_cd[1].fill_between(xgr,Hc+Tgr*scT,Hc,color=cls[1],alpha=0.35)
-        axes_cd[2].set_title("M(kNm)",fontweight="bold",color=cls[2]); axes_cd[2].fill_betweenx(yst,Mstg*scM,0,color=cls[2],alpha=0.35); axes_cd[2].plot(Mstg*scM,yst,color=cls[2],lw=2); axes_cd[2].fill_between(xgr,Hc+Mgr*scM,Hc,color=cls[2],alpha=0.35); axes_cd[2].plot(xgr,Hc+Mgr*scM,color=cls[2],lw=2)
-        axes_cd[2].text(0,Hc/2,f"{Mstg[-1]:.2f}kNm",fontsize=8,color=cls[2],ha="center")
-        plt.tight_layout(); fig_cd.suptitle("Diagrame N,T,M — Cadru Portal",fontsize=14,fontweight="bold"); st.pyplot(fig_cd); plt.close(fig_cd)
-        sFyc=VAc+VBc-Qgc-Pc; sFxc=HAc+HBc-Hvant
-        ccv1,ccv2=st.columns(2)
-        _ = ccv1.success(f"ΣFy={sFyc:.6f}≈0") if abs(sFyc)<0.01 else ccv1.error(f"ΣFy={sFyc:.6f}")
-        _ = ccv2.success(f"ΣFx={sFxc:.6f}≈0") if abs(sFxc)<0.01 else ccv2.error(f"ΣFx={sFxc:.6f}")
+**Cadre cu 3 articulatii:** 3 ecuatii globale + 1 conditie M=0 in articulatia intermediara
+(sau 2 ecuatii de moment nul fata de articulatie, de o parte si de alta).
+""")
+            st.latex(r"\text{Verificare: }\sum F_x=0,\;\sum F_y=0")
+        subtip_cadru=st.selectbox("Tip Cadru",["Cadru Simplu Rezemat","Cadru cu 3 Articulatii"],key="cad_subtip")
+
+        # =====================================================
+        # CADRU SIMPLU REZEMAT
+        # =====================================================
+        if subtip_cadru=="Cadru Simplu Rezemat":
+            st.subheader("Cadru Simplu Rezemat (Ex. 3.2.1)")
+            c1,c2,c3=st.columns(3)
+            with c1:
+                Hc=st.number_input("Inaltime stalpi h (m)",min_value=0.5,value=5.0,step=0.5,key="csr_H")
+                Lc=st.number_input("Deschidere L (m)",min_value=0.5,value=8.0,step=0.5,key="csr_L")
+                tipc=st.selectbox("Rezemare",["Articulatie A + Reazem simplu B","Incastrare A + Reazem simplu B"],key="csr_tip")
+            with c2:
+                qgc=st.number_input("q pe grinda (kN/m)",min_value=0.0,value=10.0,step=1.0,key="csr_q")
+                Pc=st.number_input("P pe grinda (kN)",min_value=0.0,value=30.0,step=5.0,key="csr_P")
+                aPc=st.number_input("Pozitie P de la nod 1 (m)",min_value=0.0,value=float(Lc)*0.375,key="csr_aP")
+            with c3:
+                Hvant=st.number_input("Forta orizontala H (kN)",value=20.0,step=1.0,key="csr_Hwind")
+                yH=st.number_input("Pozitie H pe stalp (m de la A)",min_value=0.0,value=float(Hc)*0.6,step=0.5,key="csr_yH")
+                has_console=st.checkbox("Consola din nodul 1",value=False,key="csr_console")
+            if has_console:
+                cc1,cc2=st.columns(2)
+                with cc1:
+                    Lcon=st.number_input("Lungime consola (m)",min_value=0.1,value=1.0,step=0.5,key="csr_Lcon")
+                with cc2:
+                    Fcon=st.number_input("Forta pe consola (kN, in jos)",min_value=0.0,value=10.0,step=1.0,key="csr_Fcon")
+            else:
+                Lcon=0.0; Fcon=0.0
+
+            # -- Geometrie noduri --
+            # A=(0,0), 1=(0,Hc), 2=(Lc,Hc), B=(Lc,0), C=(-Lcon,Hc) daca consola
+            xA,yA=0.0,0.0; x1,y1=0.0,Hc; x2,y2=Lc,Hc; xB,yB=Lc,0.0
+            hA_pos=yH  # pozitia fortei H pe stalp
+
+            Qgc=qgc*Lc
+            if "Incastrare" in tipc:
+                st.warning("Incastrare A + Reazem B este static nedeterminat (grad 1). Se foloseste Articulatie A + Reazem B.")
+                tipc="Articulatie A + Reazem simplu B"
+
+            # Pin A + Roller B: HA, VA, VB (3 necunoscute, 3 ecuatii)
+            HAc=Hvant
+            VBc=(Qgc*Lc/2 + Pc*aPc - Hvant*yH - Fcon*Lcon)/Lc
+            VAc=Qgc+Pc+Fcon-VBc
+            MAc=0.0
+
+            # -- Pasul 1: Schema cu Reactiuni --
+            st.markdown("### Pasul 1 — Schema Cadrului cu Incarcari si Reactiuni")
+            fig_cad,ax_cad=plt.subplots(figsize=(12,9),dpi=150)
+            sc=max(0.18,max(Lc,Hc)*0.025)
+            # Bare
+            ax_cad.plot([x1,x2],[y1,y2],"k-",lw=5.5,zorder=3)  # grinda
+            ax_cad.plot([xA,x1],[yA,y1],"k-",lw=5.5,zorder=3)  # stalp stang
+            ax_cad.plot([x2,xB],[y2,yB],"k-",lw=5.5,zorder=3)  # stalp drept
+            if has_console:
+                ax_cad.plot([-Lcon,x1],[Hc,Hc],"k-",lw=5.5,zorder=3)
+            # Reazeme
+            draw_pin(ax_cad,xA,yA,sc)
+            draw_roller(ax_cad,xB,yB,sc)
+            # Etichete noduri
+            ax_cad.text(xA-sc*3,yA-sc*3,"A",fontsize=13,fontweight="bold",ha="center")
+            ax_cad.text(xB+sc*2,yB-sc*3,"B",fontsize=13,fontweight="bold",ha="center")
+            ax_cad.text(x1-sc*2.5,y1+sc*1.5,"1",fontsize=13,fontweight="bold",ha="center",color="navy")
+            ax_cad.text(x2+sc*2,y2+sc*1.5,"2",fontsize=13,fontweight="bold",ha="center",color="navy")
+            if has_console:
+                ax_cad.text(-Lcon-sc*1.5,Hc+sc*1.5,"C",fontsize=13,fontweight="bold",ha="center",color="navy")
+            # Incarcari
+            if qgc>0: draw_distributed_load(ax_cad,x1,x2,Hc,qgc,f"q={qgc} kN/m",n_arrows=max(5,int(Lc)))
+            if Pc>0: draw_force_arrow(ax_cad,aPc,Hc,0,1,f"P={Pc} kN","darkred",scale=sc*5)
+            if Hvant!=0:
+                draw_force_arrow(ax_cad,xA,yH,1 if Hvant>0 else -1,0,f"H={abs(Hvant)} kN","#8B4513",scale=sc*5)
+            if has_console and Fcon>0:
+                draw_force_arrow(ax_cad,-Lcon,Hc,0,1,f"F={Fcon} kN","darkred",scale=sc*4)
+            # Reactiuni
+            src=max(0.6,max(Hc,Lc)*0.12)
+            if abs(VAc)>0.01:
+                sgn=1 if VAc>0 else -1
+                ax_cad.annotate("",xy=(xA,yA),xytext=(xA,-src*sgn),arrowprops=dict(arrowstyle="->",color="red",lw=2.5,mutation_scale=14))
+                ax_cad.text(xA-sc*5,-src*sgn*0.6,f"VA={VAc:.3f} kN",color="red",fontsize=9,fontweight="bold")
+            if abs(VBc)>0.01:
+                sgn=1 if VBc>0 else -1
+                ax_cad.annotate("",xy=(xB,yB),xytext=(xB,-src*sgn),arrowprops=dict(arrowstyle="->",color="red",lw=2.5,mutation_scale=14))
+                ax_cad.text(xB+sc*1.5,-src*sgn*0.6,f"VB={VBc:.3f} kN",color="red",fontsize=9,fontweight="bold")
+            if abs(HAc)>0.01:
+                ax_cad.annotate("",xy=(xA,yA),xytext=(xA-src,yA),arrowprops=dict(arrowstyle="->",color="#1a6faf",lw=2.5,mutation_scale=14))
+                ax_cad.text(xA-src*1.5,yA+sc*2,f"HA={HAc:.3f} kN",color="#1a6faf",fontsize=9,fontweight="bold")
+            # Cote
+            ax_cad.annotate("",xy=(Lc,-sc*6),xytext=(0,-sc*6),arrowprops=dict(arrowstyle="<->",color="#555",lw=1.2))
+            ax_cad.text(Lc/2,-sc*7.5,f"L={Lc} m",ha="center",fontsize=10,color="#555")
+            ax_cad.annotate("",xy=(-sc*5,0),xytext=(-sc*5,Hc),arrowprops=dict(arrowstyle="<->",color="#555",lw=1.2))
+            ax_cad.text(-sc*8,Hc/2,f"h={Hc} m",ha="center",fontsize=10,color="#555",rotation=90)
+            draw_axes(ax_cad,-sc*3 if not has_console else -Lcon-sc*5,-sc*2,length=sc*2.5)
+            xleft=-Lcon-sc*12 if has_console else -sc*14
+            ax_cad.set_xlim(xleft,Lc+sc*14); ax_cad.set_ylim(-sc*12,Hc+sc*16)
+            ax_cad.set_aspect("equal"); ax_cad.axis("off")
+            ax_cad.set_title("Cadru Simplu Rezemat — Schema cu Reactiuni",fontsize=13,fontweight="bold")
+            st.pyplot(fig_cad); plt.close(fig_cad)
+
+            # -- Pasul 2: Ecuatii de Echilibru --
+            st.markdown("### Pasul 2 — Ecuatii de Echilibru")
+            ce1,ce2=st.columns(2)
+            with ce1:
+                st.latex(r"\sum F_x=0:\; H_A = H_{ext}")
+                st.latex(r"\sum M_A=0:\; V_B \cdot L = \frac{qL^2}{2}+P \cdot a_P - H \cdot y_H - F_{con}\cdot L_{con}")
+                st.latex(r"\sum F_y=0:\; V_A + V_B = qL + P + F_{con}")
+            with ce2:
+                st.latex(rf"H_A = {HAc:.4f}\;\text{{kN}}")
+                st.latex(rf"V_B = {VBc:.4f}\;\text{{kN}}")
+                st.latex(rf"V_A = {VAc:.4f}\;\text{{kN}}")
+            # Verificare
+            sFx=HAc-Hvant; sFy=VAc+VBc-Qgc-Pc-Fcon
+            sMA=VBc*Lc-Qgc*Lc/2-Pc*aPc+Hvant*yH+Fcon*Lcon
+            vr1,vr2,vr3=st.columns(3)
+            _ = vr1.success(f"SFx = {sFx:.6f} ~ 0") if abs(sFx)<0.01 else vr1.error(f"SFx = {sFx:.6f}")
+            _ = vr2.success(f"SFy = {sFy:.6f} ~ 0") if abs(sFy)<0.01 else vr2.error(f"SFy = {sFy:.6f}")
+            _ = vr3.success(f"SMA = {sMA:.6f} ~ 0") if abs(sMA)<0.01 else vr3.error(f"SMA = {sMA:.6f}")
+
+            # -- Pasul 3: Momente la capetele barelor --
+            st.markdown("### Pasul 3 — Momente la Capetele Barelor")
+            # Stalp A-1 (vertical, de la A=(0,0) la 1=(0,Hc))
+            M_A1_bot=MAc  # =0 pentru articulatie
+            M_A1_top=HAc*Hc  # momentul in nodul 1 din stalp
+            # Grinda 1-2 (orizontala, de la 1=(0,Hc) la 2=(Lc,Hc))
+            M_12_left=HAc*Hc  # momentul transmis din stalp (nod rigid)
+            # Momentul in orice punct x al grinzii (masurat de la nodul 1):
+            # M(x) = M_12_left + VA*x - q*x^2/2 - P*(x-aP)*H(x-aP)
+            # Dar atentie: VA actioneaza in sus la A, transmis prin stalp la nod 1
+            # La nod 1, fortele din stalp: N_stalp_top=-VA (compresiune), T_stalp_top=HA
+            # Pe grinda, la capatul stang: forta verticala = VA (in sus), forta orizontala = -HA
+            # Plus momentul M_A1_top = HA*Hc
+            M_12_right=VAc*Lc - qgc*Lc**2/2 - Pc*(Lc-aPc) if Pc>0 and aPc<Lc else VAc*Lc - qgc*Lc**2/2
+            # Corectie: momentul la capatul drept al grinzii (la nodul 2) calculat de la stanga:
+            # M_2 = HA*Hc + VA*L - q*L^2/2 - P*(L-aP)
+            # Sau de la dreapta: M_2 = VB*0 = verificare din stalp drept
+            M_nod2_grinda = M_12_left + VAc*Lc - qgc*Lc**2/2 - (Pc*(Lc-aPc) if Pc>0 and aPc<=Lc else 0)
+            # Consola C-1
+            M_con_C=0.0  # capat liber
+            M_con_1=Fcon*Lcon if has_console else 0.0  # momentul la nod 1 din consola
+
+            ec1,ec2=st.columns(2)
+            with ec1:
+                st.markdown("**Stalp A-1:**")
+                st.latex(rf"M_{{A}} = {M_A1_bot:.3f}\;\text{{kNm}}")
+                st.latex(rf"M_{{1,stalp}} = H_A \cdot h = {HAc:.3f} \times {Hc:.2f} = {M_A1_top:.3f}\;\text{{kNm}}")
+                if has_console:
+                    st.markdown("**Consola C-1:**")
+                    st.latex(rf"M_C = 0\;\text{{(capat liber)}}")
+                    st.latex(rf"M_{{1,con}} = F \cdot L_{{con}} = {Fcon:.2f} \times {Lcon:.2f} = {M_con_1:.3f}\;\text{{kNm}}")
+            with ec2:
+                st.markdown("**Grinda 1-2:**")
+                st.latex(rf"M_{{1,grinda}} = M_{{1,stalp}} = {M_12_left:.3f}\;\text{{kNm}}")
+                st.latex(rf"M_{{2}} = {M_nod2_grinda:.3f}\;\text{{kNm}}")
+                st.markdown("**Stalp 2-B:**")
+                st.latex(rf"M_{{2,stalp}} = M_{{2,grinda}} = {M_nod2_grinda:.3f}\;\text{{kNm}}")
+                st.latex(rf"M_B = 0\;\text{{(reazem simplu)}}")
+
+            # Verificare echilibru nod 1 la moment
+            sum_M1 = -M_A1_top + M_12_left + (M_con_1 if has_console else 0)  # trebuie ≈ 0 daca nod rigid
+            # Nod rigid: momentele de la capetele barelor se echilibreaza
+
+            # -- Pasul 4: Diagrame N, T, M pe cadru --
+            st.markdown("### Pasul 4 — Diagrame N, T, M pe Cadru")
+            npts=200
+
+            # Stalp A-1 (s de la 0 la Hc, de jos in sus)
+            s_A1=np.linspace(0,Hc,npts)
+            N_A1=-VAc*np.ones(npts)
+            # T pe stalp: sub H (s<yH) singura forta orizontala = HA; deasupra H: HA-Hvant=0
+            T_A1=np.where(s_A1<=yH, HAc, HAc-Hvant)
+            # M pe stalp: M(s)=HA*s - Hvant*max(s-yH, 0)
+            M_A1=HAc*s_A1 - Hvant*np.maximum(s_A1-yH, 0)
+
+            # Consola C-1 (daca exista, s de la 0 la Lcon, de la C la 1)
+            if has_console:
+                s_con=np.linspace(0,Lcon,npts)
+                N_con=np.zeros(npts)  # orizontala, fara forta axiala
+                T_con=-Fcon*np.ones(npts)  # forta taitoare constanta
+                M_con=-Fcon*s_con  # moment creste de la 0 la -Fcon*Lcon
+
+            # Grinda 1-2 (s de la 0 la Lc, de la 1 la 2)
+            s_gr=np.linspace(0,Lc,npts)
+            N_gr=-HAc*np.ones(npts)  # efort axial = reactiunea orizontala transmisa
+            T_gr=np.zeros(npts); M_gr=np.zeros(npts)
+            for i,s in enumerate(s_gr):
+                T_gr[i]=VAc - qgc*s - (Pc if s>aPc else 0)
+                M_gr[i]=M_A1_top + (M_con_1 if has_console else 0) + VAc*s - qgc*s**2/2 - (Pc*(s-aPc) if s>aPc else 0)
+
+            # Stalp 2-B (s de la 0 la Hc, de la 2 in jos la B)
+            s_2B=np.linspace(0,Hc,npts)
+            N_2B=-VBc*np.ones(npts)  # compresiune
+            T_2B=np.zeros(npts)  # roller B nu are forta orizontala
+            M_2B=np.zeros(npts)  # moment = 0 pe tot stalpul (fara forte orizontale)
+
+            # Scale factor pentru diagrame
+            all_N=np.concatenate([N_A1,N_gr,N_2B] + ([N_con] if has_console else []))
+            all_T=np.concatenate([T_A1,T_gr,T_2B] + ([T_con] if has_console else []))
+            all_M=np.concatenate([M_A1,M_gr,M_2B] + ([M_con] if has_console else []))
+            dim=max(Hc,Lc)
+            scN=0.18*dim/max(0.01,np.max(np.abs(all_N)))
+            scT=0.18*dim/max(0.01,np.max(np.abs(all_T)))
+            scM=0.18*dim/max(0.01,np.max(np.abs(all_M)))
+
+            cls=["#1a6faf","#2ca02c","#d62728"]
+            titles=["N (kN)","T (kN)","M (kNm)"]
+            fig_ntm,axes_ntm=plt.subplots(1,3,figsize=(18,9),dpi=150)
+
+            for idx_d,(sc_d,vals_name,color,title) in enumerate([
+                (scN,"N",cls[0],titles[0]),
+                (scT,"T",cls[1],titles[1]),
+                (scM,"M",cls[2],titles[2])]):
+                ax=axes_ntm[idx_d]
+                # Construim barele cu valorile corespunzatoare
+                if vals_name=="N":
+                    bars_d=[
+                        {'x1':xA,'y1':yA,'x2':x1,'y2':y1,'values':N_A1},
+                        {'x1':x1,'y1':y1,'x2':x2,'y2':y2,'values':N_gr},
+                        {'x1':x2,'y1':y2,'x2':xB,'y2':yB,'values':N_2B}]
+                    if has_console: bars_d.insert(0,{'x1':-Lcon,'y1':Hc,'x2':x1,'y2':y1,'values':N_con})
+                elif vals_name=="T":
+                    bars_d=[
+                        {'x1':xA,'y1':yA,'x2':x1,'y2':y1,'values':T_A1},
+                        {'x1':x1,'y1':y1,'x2':x2,'y2':y2,'values':T_gr},
+                        {'x1':x2,'y1':y2,'x2':xB,'y2':yB,'values':T_2B}]
+                    if has_console: bars_d.insert(0,{'x1':-Lcon,'y1':Hc,'x2':x1,'y2':y1,'values':T_con})
+                else:
+                    bars_d=[
+                        {'x1':xA,'y1':yA,'x2':x1,'y2':y1,'values':M_A1},
+                        {'x1':x1,'y1':y1,'x2':x2,'y2':y2,'values':M_gr},
+                        {'x1':x2,'y1':y2,'x2':xB,'y2':yB,'values':M_2B}]
+                    if has_console: bars_d.insert(0,{'x1':-Lcon,'y1':Hc,'x2':x1,'y2':y1,'values':M_con})
+                draw_ntm_on_frame(ax,bars_d,color,sc_d)
+                # Reazeme mici
+                scs=sc*0.5
+                draw_pin(ax,xA,yA,scs); draw_roller(ax,xB,yB,scs)
+                # Noduri
+                for nx_,ny_,lb in [(x1,y1,"1"),(x2,y2,"2")]:
+                    ax.plot(nx_,ny_,"ko",ms=5,zorder=6)
+                    ax.text(nx_,ny_+sc*1.2,lb,fontsize=9,ha="center",fontweight="bold",color="navy")
+                ax.set_aspect("equal"); ax.axis("off")
+                ax.set_title(title,fontsize=13,fontweight="bold",color=color)
+                xleft_d=-Lcon-sc*6 if has_console else -sc*6
+                ax.set_xlim(xleft_d,Lc+sc*6); ax.set_ylim(-sc*8,Hc+sc*8)
+
+            plt.tight_layout()
+            fig_ntm.suptitle("Diagrame N, T, M — Cadru Simplu Rezemat",fontsize=14,fontweight="bold",y=1.01)
+            st.pyplot(fig_ntm); plt.close(fig_ntm)
+
+            # -- Pasul 5: Verificare --
+            st.markdown("### Pasul 5 — Verificare Echilibru")
+            # Valori caracteristice
+            vc1,vc2,vc3=st.columns(3)
+            vc1.metric("M max grinda",f"{np.max(np.abs(M_gr)):.3f} kNm")
+            vc2.metric("T max grinda",f"{np.max(np.abs(T_gr)):.3f} kN")
+            vc3.metric("M nod 1",f"{M_A1_top+(M_con_1 if has_console else 0):.3f} kNm")
+            # T=0 pe grinda (punct de M extrem)
+            with st.expander("Valori Caracteristice"):
+                idx_T0=np.where(np.diff(np.sign(T_gr)))[0]
+                for sc_idx in idx_T0:
+                    st.info(f"T=0 la x = {s_gr[sc_idx]:.3f} m de la nodul 1 → M = {M_gr[sc_idx]:.3f} kNm (extrem)")
+                st.markdown(f"**M la nodul 2 (grinda):** {M_nod2_grinda:.3f} kNm")
+                st.markdown(f"**N stalp stang:** {N_A1[0]:.3f} kN (compresiune)" if N_A1[0]<0 else f"**N stalp stang:** {N_A1[0]:.3f} kN (intindere)")
+                st.markdown(f"**N stalp drept:** {N_2B[0]:.3f} kN (compresiune)" if N_2B[0]<0 else f"**N stalp drept:** {N_2B[0]:.3f} kN (intindere)")
+
+        # =====================================================
+        # CADRU CU 3 ARTICULATII
+        # =====================================================
+        else:
+            st.subheader("Cadru cu 3 Articulatii (Ex. 3.2.2 / 3.2.3)")
+            sub_var=st.radio("Varianta",["Reazeme la acelasi nivel","Reazeme decalate"],key="c3a_sub",horizontal=True)
+
+            c1,c2,c3=st.columns(3)
+            with c1:
+                L3a=st.number_input("Deschidere L (m)",min_value=1.0,value=10.0,step=0.5,key="c3a_L")
+                h1_3a=st.number_input("Inaltime nod 1 (m)",min_value=0.5,value=4.0,step=0.5,key="c3a_h1")
+                h2_3a=st.number_input("Inaltime nod 2 (m)",min_value=0.5,value=6.0,step=0.5,key="c3a_h2")
+            with c2:
+                xC_3a=st.number_input("Pozitie articulatie C (x, m)",min_value=0.1,value=float(L3a)/2,step=0.5,key="c3a_xC")
+                yC_3a=st.number_input("Inaltime articulatie C (y, m)",min_value=0.5,value=max(h1_3a,h2_3a),step=0.5,key="c3a_yC")
+                q3a=st.number_input("q distribuit pe bara 1-C (kN/m)",min_value=0.0,value=12.0,step=1.0,key="c3a_q")
+            with c3:
+                P3a=st.number_input("P concentrata in nod 2 (kN)",min_value=0.0,value=25.0,step=5.0,key="c3a_P")
+                P3a_dir=st.selectbox("Directie P",["Orizontala (spre dreapta)","Verticala (in jos)"],key="c3a_Pdir")
+                if sub_var=="Reazeme decalate":
+                    yA_3a=st.number_input("Inaltime reazem A (m)",min_value=0.0,value=0.0,step=0.5,key="c3a_yA")
+                else:
+                    yA_3a=0.0
+            has_con3=st.checkbox("Consola din nodul 2",value=False,key="c3a_console")
+            if has_con3:
+                cc1,cc2=st.columns(2)
+                with cc1: Lcon3=st.number_input("Lungime consola (m)",min_value=0.1,value=2.0,step=0.5,key="c3a_Lcon")
+                with cc2: Fcon3=st.number_input("Forta pe consola (kN, in jos)",min_value=0.0,value=30.0,step=5.0,key="c3a_Fcon")
+            else:
+                Lcon3=0.0; Fcon3=0.0
+
+            # Geometrie
+            xA_3,yA_3=0.0,yA_3a; xB_3,yB_3=L3a,0.0
+            x1_3,y1_3=0.0,yA_3a+h1_3a; x2_3,y2_3=L3a,h2_3a
+            xC_3,yC_3=xC_3a,yC_3a
+            # Consola: se extinde orizontal din nod 2
+            xa_3=x2_3+Lcon3 if has_con3 else x2_3; ya_3=y2_3
+
+            # Forte externe
+            Px3=P3a if "Orizontala" in P3a_dir else 0.0
+            Py3=-P3a if "Verticala" in P3a_dir else 0.0  # in jos = negativ
+
+            # Incarcarea distribuita pe bara 1-C
+            L_1C=np.sqrt((xC_3-x1_3)**2+(yC_3-y1_3)**2)
+            c_1C=(xC_3-x1_3)/L_1C if L_1C>0 else 1.0
+            s_1C=(yC_3-y1_3)/L_1C if L_1C>0 else 0.0
+            # q perpendiculara pe bara: componente globale
+            # Normala la bara (spre stanga = interior): nx=-s_1C, ny=c_1C
+            q_fx=-q3a*(-s_1C)  # componenta x a fortei distribuite pe unitate de lungime
+            q_fy=-q3a*(c_1C)   # componenta y (in jos)
+            # Rezultanta q pe bara 1-C:
+            Qq=q3a*L_1C  # magnitudinea totala
+            # Punct de aplicare (mijlocul barei):
+            xQq=(x1_3+xC_3)/2; yQq=(y1_3+yC_3)/2
+
+            # Forte consola:
+            Fcon_x3=0.0; Fcon_y3=-Fcon3  # in jos
+
+            # ---- Calcul reactiuni ----
+            # 4 necunoscute: HA, VA, HB, VB
+            # Forte externe totale:
+            sumFx_ext=Px3 + q_fx*L_1C + Fcon_x3  # q_fx*L_1C = componenta x totala a q
+            sumFy_ext=Py3 + q_fy*L_1C + Fcon_y3
+
+            if sub_var=="Reazeme la acelasi nivel":
+                # yA=yB=0 (sau ambele la acelasi nivel)
+                # ΣMA=0: VB*L = sum of moments about A
+                # Momente fata de A (sens orar = pozitiv):
+                mom_q_A = q_fy*L_1C*xQq - q_fx*L_1C*yQq  # moment forta q fata de A
+                # Corectie: q perpendiculara pe bara, trebuie sa calculam momentul corect
+                # q actioneaza perpendicular pe bara. Fiecare element ds are forta q*ds perpendiculara.
+                # Momentul total fata de A: integral pe bara a (r x F) ds
+                # Folosim componente globale:
+                npts_q=100
+                sq=np.linspace(0,L_1C,npts_q)
+                xq_pts=x1_3+sq*c_1C; yq_pts=y1_3+sq*s_1C
+                # Forta pe element: dFx = -q3a*(-s_1C)*ds = q3a*s_1C*ds, dFy = -q3a*c_1C*ds
+                dFx_q=q3a*s_1C; dFy_q=-q3a*c_1C  # per unitate de lungime de bara
+                # Moment fata de A: sum(x*dFy - y*dFx)*ds
+                mom_q_A_num=np.trapezoid(xq_pts*dFy_q - (yq_pts-yA_3)*dFx_q, sq)
+
+                mom_P_A = Px3*(y2_3-yA_3) + Py3*x2_3  # P la nod 2
+                # Atentie la semnul Py3 (negativ = in jos)
+                # Moment P fata de A: Px3*(y2-yA) - (-Py3)*x2 ...
+                # M = x*Fy - y*Fx (unde y relativ la A)
+                mom_P_A = x2_3*Py3 - (y2_3-yA_3)*(-Px3)  # ???
+                # Simplificam: moment = forta * brat, cu semn
+                # P orizontala (Px3 spre dreapta) la y2: moment fata de A = -Px3*(y2-yA) (anti-orar)
+                # P verticala (Py3 in jos) la x2: moment fata de A = -Py3*x2 ... nu, Py3<0 (in jos)
+                # M_A de la Py3: Py3 actioneaza in jos la x2 → moment orar = |Py3|*x2, dar Py3<0 deci M=-Py3*x2
+                # Corect cu cross product: M = x*Fy - y*Fx (y relativ la A)
+                mom_P_A = x2_3*Py3 - (y2_3-yA_3)*Px3
+
+                mom_Fcon_A=0.0
+                if has_con3:
+                    # Fcon la (xa_3, ya_3), Fcon_y3 in jos
+                    mom_Fcon_A = xa_3*Fcon_y3 - (ya_3-yA_3)*Fcon_x3
+
+                # ΣMA=0: VB*L + HB*0 = -(mom_q + mom_P + mom_Fcon) — nu, calculam direct
+                # ΣMA=0: reacțiunile la B: VB*xB + HB*yB - VB contribuie cu moment
+                # La acelasi nivel: yA=yB=0, deci HB nu da moment fata de A
+                # VB*L = -(mom_q_A_num + mom_P_A + mom_Fcon_A)
+                VB_3=-(mom_q_A_num + mom_P_A + mom_Fcon_A)/L3a
+                VA_3=-(sumFy_ext) - VB_3  # ΣFy=0: VA+VB+sumFy_ext=0
+
+                # ΣMC_stg=0 (moment fata de C de la stanga):
+                # VA*(xC-xA) + HA*(yC-yA) + momente incarcari la stanga de C = 0
+                # Incarcari la stanga de C: q pe bara 1-C intreaga (daca 1 e la stanga de C)
+                mom_q_C_stg=np.trapezoid((xq_pts-xC_3)*dFy_q - (yq_pts-yC_3)*dFx_q, sq)
+                # HA din: VA*(xC-xA) + HA*(yC-yA) + mom_q_C_stg = 0
+                # (plus P daca e la stanga de C — P e la nod 2 care e de obicei la dreapta)
+                # P la nod 2: daca x2 < xC, contribuie la partea stanga
+                mom_P_C_stg=0.0
+                if x2_3<=xC_3:
+                    mom_P_C_stg=(x2_3-xC_3)*Py3 - (y2_3-yC_3)*Px3
+                    if has_con3: mom_P_C_stg += (xa_3-xC_3)*Fcon_y3
+
+                if abs(yC_3-yA_3)>0.01:
+                    HA_3=-(VA_3*(xC_3-xA_3) + mom_q_C_stg + mom_P_C_stg)/(yC_3-yA_3)
+                else:
+                    HA_3=0.0
+                HB_3=-(sumFx_ext)-HA_3  # ΣFx=0
+            else:
+                # Reazeme decalate: sistem 2x2
+                # ΣMA=0 si ΣMC_dr=0 → sistem in VB, HB
+                # ΣMB=0 si ΣMC_stg=0 → sistem in VA, HA
+                # Calculam momente fata de A si B
+                npts_q=100
+                sq=np.linspace(0,L_1C,npts_q)
+                xq_pts=x1_3+sq*c_1C; yq_pts=y1_3+sq*s_1C
+                dFx_q=q3a*s_1C; dFy_q=-q3a*c_1C
+                mom_q_A_num=np.trapezoid(xq_pts*dFy_q - (yq_pts-yA_3)*dFx_q, sq)
+                mom_q_B_num=np.trapezoid((xq_pts-xB_3)*dFy_q - (yq_pts-yB_3)*dFx_q, sq)
+
+                mom_P_A = x2_3*Py3 - (y2_3-yA_3)*Px3
+                mom_P_B = (x2_3-xB_3)*Py3 - (y2_3-yB_3)*Px3
+                mom_Fcon_A=0.0; mom_Fcon_B=0.0
+                if has_con3:
+                    mom_Fcon_A = xa_3*Fcon_y3 - (ya_3-yA_3)*Fcon_x3
+                    mom_Fcon_B = (xa_3-xB_3)*Fcon_y3 - (ya_3-yB_3)*Fcon_x3
+
+                # ΣMA=0: VB*(xB-xA) + HB*(yB-yA) + mom_q_A + mom_P_A + mom_Fcon_A = 0
+                # ΣMC_dr=0 (de la dreapta): VB*(xB-xC) + HB*(yB-yC) + momente incarcari dreapta C = 0
+                mom_q_C_dr=0.0  # q e doar pe bara 1-C care e la stanga de C
+                mom_P_C_dr=0.0; mom_Fcon_C_dr=0.0
+                if x2_3>xC_3:
+                    mom_P_C_dr=(x2_3-xC_3)*Py3 - (y2_3-yC_3)*Px3
+                if has_con3 and xa_3>xC_3:
+                    mom_Fcon_C_dr=(xa_3-xC_3)*Fcon_y3 - (ya_3-yC_3)*Fcon_x3
+
+                A_mat=np.array([
+                    [(xB_3-xA_3), (yB_3-yA_3)],
+                    [(xB_3-xC_3), (yB_3-yC_3)]])
+                b_vec=np.array([
+                    -(mom_q_A_num + mom_P_A + mom_Fcon_A),
+                    -(mom_q_C_dr + mom_P_C_dr + mom_Fcon_C_dr)])
+                try:
+                    sol_B=np.linalg.solve(A_mat,b_vec)
+                    VB_3,HB_3=sol_B[0],sol_B[1]
+                except np.linalg.LinAlgError:
+                    VB_3,HB_3=0.0,0.0
+                    st.error("Sistem singular — verificati geometria!")
+
+                VA_3=-(sumFy_ext)-VB_3
+                HA_3=-(sumFx_ext)-HB_3
+
+            # Verificare globala
+            chk_Fx=HA_3+HB_3+sumFx_ext
+            chk_Fy=VA_3+VB_3+sumFy_ext
+
+            # -- Pasul 1: Schema --
+            st.markdown("### Pasul 1 — Schema Cadrului cu Reactiuni")
+            fig3,ax3=plt.subplots(figsize=(14,10),dpi=150)
+            sc3=max(0.2,max(L3a,max(h1_3a,h2_3a))*0.025)
+            # Bare
+            ax3.plot([xA_3,x1_3],[yA_3,y1_3],"k-",lw=5.5,zorder=3)  # A-1
+            ax3.plot([x1_3,xC_3],[y1_3,yC_3],"k-",lw=5.5,zorder=3)  # 1-C
+            ax3.plot([xC_3,x2_3],[yC_3,y2_3],"k-",lw=5.5,zorder=3)  # C-2
+            ax3.plot([x2_3,xB_3],[y2_3,yB_3],"k-",lw=5.5,zorder=3)  # 2-B
+            if has_con3:
+                ax3.plot([x2_3,xa_3],[y2_3,ya_3],"k-",lw=5.5,zorder=3)  # consola 2-a
+            # Articulatie C
+            ax3.plot(xC_3,yC_3,"ko",ms=12,zorder=7); ax3.plot(xC_3,yC_3,"wo",ms=6,zorder=8)
+            ax3.text(xC_3,yC_3+sc3*3,"C\n(M=0)",ha="center",fontsize=10,color="navy",fontweight="bold")
+            # Reazeme
+            draw_pin(ax3,xA_3,yA_3,sc3); draw_pin(ax3,xB_3,yB_3,sc3)
+            # Etichete
+            ax3.text(xA_3-sc3*3,yA_3-sc3*3,"A",fontsize=13,fontweight="bold",ha="center")
+            ax3.text(xB_3+sc3*2,yB_3-sc3*3,"B",fontsize=13,fontweight="bold",ha="center")
+            ax3.text(x1_3-sc3*2.5,y1_3+sc3*1.5,"1",fontsize=13,fontweight="bold",ha="center",color="navy")
+            ax3.text(x2_3+sc3*2,y2_3+sc3*1.5,"2",fontsize=13,fontweight="bold",ha="center",color="navy")
+            if has_con3:
+                ax3.text(xa_3+sc3*1.5,ya_3+sc3*1.5,"a",fontsize=13,fontweight="bold",ha="center",color="navy")
+            # Incarcari
+            if q3a>0:
+                draw_distributed_load_perp(ax3, 0, L_1C, c_1C, s_1C, q3a, q_down=True, n=max(5,int(L_1C*1.5)))
+                mid_x=(x1_3+xC_3)/2; mid_y=(y1_3+yC_3)/2
+                ax3.text(mid_x-sc3*4,mid_y+sc3*2,f"q={q3a} kN/m",fontsize=9,fontweight="bold",color="#2255cc")
+            if P3a>0:
+                pfx=1.0 if "Orizontala" in P3a_dir else 0.0
+                pfy=0.0 if "Orizontala" in P3a_dir else 1.0
+                draw_force_arrow(ax3,x2_3,y2_3,pfx,pfy,f"P={P3a} kN","darkred",scale=sc3*5)
+            if has_con3 and Fcon3>0:
+                draw_force_arrow(ax3,xa_3,ya_3,0,1,f"F={Fcon3} kN","darkred",scale=sc3*4)
+            # Reactiuni
+            src3=max(0.7,max(L3a,h1_3a)*0.12)
+            if abs(VA_3)>0.01:
+                ax3.annotate("",xy=(xA_3,yA_3),xytext=(xA_3,yA_3-src3),arrowprops=dict(arrowstyle="->",color="red",lw=2.5,mutation_scale=14))
+                ax3.text(xA_3-sc3*5,yA_3-src3*0.6,f"VA={VA_3:.3f}",color="red",fontsize=9,fontweight="bold")
+            if abs(VB_3)>0.01:
+                ax3.annotate("",xy=(xB_3,yB_3),xytext=(xB_3,yB_3-src3),arrowprops=dict(arrowstyle="->",color="red",lw=2.5,mutation_scale=14))
+                ax3.text(xB_3+sc3*1.5,yB_3-src3*0.6,f"VB={VB_3:.3f}",color="red",fontsize=9,fontweight="bold")
+            if abs(HA_3)>0.01:
+                ax3.annotate("",xy=(xA_3,yA_3),xytext=(xA_3-src3,yA_3),arrowprops=dict(arrowstyle="->",color="#1a6faf",lw=2.5,mutation_scale=14))
+                ax3.text(xA_3-src3*1.5,yA_3+sc3*2,f"HA={HA_3:.3f}",color="#1a6faf",fontsize=9,fontweight="bold")
+            if abs(HB_3)>0.01:
+                ax3.annotate("",xy=(xB_3,yB_3),xytext=(xB_3+src3,yB_3),arrowprops=dict(arrowstyle="->",color="#1a6faf",lw=2.5,mutation_scale=14))
+                ax3.text(xB_3+src3*0.5,yB_3+sc3*2,f"HB={HB_3:.3f}",color="#1a6faf",fontsize=9,fontweight="bold")
+            draw_axes(ax3,xA_3-sc3*5,yA_3-sc3*2,length=sc3*2.5)
+            ax3.set_aspect("equal"); ax3.axis("off")
+            xmin3=min(xA_3,x1_3,-Lcon3 if has_con3 else 0)-sc3*10
+            xmax3=max(xB_3,xa_3 if has_con3 else xB_3)+sc3*10
+            ymin3=min(yA_3,yB_3)-sc3*10; ymax3=max(yC_3,y1_3,y2_3)+sc3*10
+            ax3.set_xlim(xmin3,xmax3); ax3.set_ylim(ymin3,ymax3)
+            ax3.set_title("Cadru cu 3 Articulatii — Schema cu Reactiuni",fontsize=13,fontweight="bold")
+            st.pyplot(fig3); plt.close(fig3)
+
+            # -- Pasul 2: Ecuatii --
+            st.markdown("### Pasul 2 — Ecuatii de Echilibru")
+            eq1,eq2=st.columns(2)
+            with eq1:
+                if sub_var=="Reazeme la acelasi nivel":
+                    st.latex(r"\sum M_A=0 \Rightarrow V_B")
+                    st.latex(r"\sum F_y=0 \Rightarrow V_A")
+                    st.latex(r"\sum M_C^{stg}=0 \Rightarrow H_A")
+                    st.latex(r"\sum F_x=0 \Rightarrow H_B")
+                else:
+                    st.latex(r"\text{Sistem }2\times 2:")
+                    st.latex(r"\sum M_A=0,\;\sum M_C^{dr}=0 \Rightarrow V_B, H_B")
+                    st.latex(r"\sum F_y=0 \Rightarrow V_A")
+                    st.latex(r"\sum F_x=0 \Rightarrow H_A")
+            with eq2:
+                st.latex(rf"V_A = {VA_3:.4f}\;\text{{kN}}")
+                st.latex(rf"V_B = {VB_3:.4f}\;\text{{kN}}")
+                st.latex(rf"H_A = {HA_3:.4f}\;\text{{kN}}")
+                st.latex(rf"H_B = {HB_3:.4f}\;\text{{kN}}")
+            # Verificare
+            vv1,vv2=st.columns(2)
+            _ = vv1.success(f"SFx = {chk_Fx:.6f} ~ 0") if abs(chk_Fx)<0.01 else vv1.error(f"SFx = {chk_Fx:.6f}")
+            _ = vv2.success(f"SFy = {chk_Fy:.6f} ~ 0") if abs(chk_Fy)<0.01 else vv2.error(f"SFy = {chk_Fy:.6f}")
+
+            # -- Pasul 3: Calcul N, T, M pe fiecare bara --
+            st.markdown("### Pasul 3 — Calcul Eforturi pe Bare")
+            npts=200
+
+            # Definim barele: A-1, 1-C, C-2, 2-B, (consola 2-a)
+            def bar_ntm(x1b,y1b,x2b,y2b,Fx_start,Fy_start,M_start,q_perp=0.0,q_ax=0.0):
+                """Calculeaza N,T,M pe o bara de la (x1,y1) la (x2,y2).
+                Fx_start,Fy_start = forte globale la capatul start (din echilibru nod).
+                M_start = moment la capatul start.
+                q_perp = incarcarea perpendiculara pe bara (pozitiv = in sensul normalei).
+                q_ax = incarcarea axiala pe bara."""
+                dx,dy=x2b-x1b,y2b-y1b
+                Lb=np.sqrt(dx**2+dy**2)
+                if Lb<1e-9: return np.zeros(npts),np.zeros(npts),np.zeros(npts)
+                cb,sb=dx/Lb,dy/Lb
+                s=np.linspace(0,Lb,npts)
+                # Transformare forte globale in locale
+                N_s=(Fx_start*cb+Fy_start*sb) + q_ax*s  # efort axial
+                T_s=(-Fx_start*sb+Fy_start*cb) + q_perp*s  # forta taietoare
+                M_s=M_start + (-Fx_start*sb+Fy_start*cb)*s + q_perp*s**2/2  # moment
+                return N_s,T_s,M_s
+
+            # Bara A-1 (de la A la nod 1)
+            # La capatul A: reactiunile HA, VA (in sus si spre dreapta)
+            Fx_A=HA_3; Fy_A=VA_3
+            N_A1_3,T_A1_3,M_A1_3=bar_ntm(xA_3,yA_3,x1_3,y1_3,Fx_A,Fy_A,0.0)
+
+            # Bara 1-C (de la nod 1 la C, cu q perpendicular)
+            # La nod 1: forte din stalp A-1 la capatul superior + incarcari externe in nod 1
+            # Fortele la capatul superior al barei A-1 (transmise la nod 1):
+            L_A1=np.sqrt((x1_3-xA_3)**2+(y1_3-yA_3)**2)
+            c_A1=(x1_3-xA_3)/L_A1 if L_A1>0 else 0; s_A1_c=(y1_3-yA_3)/L_A1 if L_A1>0 else 1
+            # N si T la capatul superior al A-1:
+            N_top_A1=N_A1_3[-1]; T_top_A1=T_A1_3[-1]; M_top_A1=M_A1_3[-1]
+            # Transformam inapoi in globale la nod 1:
+            Fx_1_from_A1=N_top_A1*c_A1 - T_top_A1*s_A1_c
+            Fy_1_from_A1=N_top_A1*s_A1_c + T_top_A1*c_A1
+            # Pe bara 1-C, la capatul 1, fortele sunt opuse celor transmise de A-1 (echilibru nod):
+            # Plus P daca e aplicata in nod 1 (de obicei P e in nod 2)
+            Fx_1C=-Fx_1_from_A1; Fy_1C=-Fy_1_from_A1; M_1C=-M_top_A1
+            # q perpendicular pe bara 1-C: q3a in jos perpendicular
+            # Componenta perpendiculara pe bara = q3a (daca q actioneaza perpendicular)
+            # Dar sensul: normala barei (-s_1C, c_1C) = spre stanga/sus
+            # q in jos perpendicular = -q3a in sensul normalei
+            N_1C_3,T_1C_3,M_1C_3=bar_ntm(x1_3,y1_3,xC_3,yC_3,Fx_1C,Fy_1C,M_1C,q_perp=-q3a,q_ax=0.0)
+
+            # Bara C-2 (de la C la nod 2)
+            # La C: M=0 (articulatie!), fortele se obtin din echilibru
+            # Fortele la C din bara 1-C:
+            L_1C_b=np.sqrt((xC_3-x1_3)**2+(yC_3-y1_3)**2)
+            c_1C_b=(xC_3-x1_3)/L_1C_b if L_1C_b>0 else 1; s_1C_b=(yC_3-y1_3)/L_1C_b if L_1C_b>0 else 0
+            N_end_1C=N_1C_3[-1]; T_end_1C=T_1C_3[-1]
+            Fx_C_from_1C=N_end_1C*c_1C_b - T_end_1C*s_1C_b
+            Fy_C_from_1C=N_end_1C*s_1C_b + T_end_1C*c_1C_b
+            # Pe bara C-2: forte opuse
+            Fx_C2=-Fx_C_from_1C; Fy_C2=-Fy_C_from_1C
+            M_C2=0.0  # articulatie!
+            N_C2_3,T_C2_3,M_C2_3=bar_ntm(xC_3,yC_3,x2_3,y2_3,Fx_C2,Fy_C2,M_C2)
+
+            # Bara 2-B (de la nod 2 la B)
+            # La nod 2: forte din C-2 + P + consola
+            L_C2=np.sqrt((x2_3-xC_3)**2+(y2_3-yC_3)**2)
+            c_C2=(x2_3-xC_3)/L_C2 if L_C2>0 else 1; s_C2=(y2_3-yC_3)/L_C2 if L_C2>0 else 0
+            N_end_C2=N_C2_3[-1]; T_end_C2=T_C2_3[-1]; M_end_C2=M_C2_3[-1]
+            Fx_2_from_C2=N_end_C2*c_C2 - T_end_C2*s_C2
+            Fy_2_from_C2=N_end_C2*s_C2 + T_end_C2*c_C2
+            # La nod 2: echilibru cu P si consola
+            Fx_2B=-(Fx_2_from_C2 + Px3 + Fcon_x3)
+            Fy_2B=-(Fy_2_from_C2 + Py3 + Fcon_y3)
+            M_2B=-M_end_C2 - (Fcon3*Lcon3 if has_con3 else 0)  # moment consola
+            N_2B_3,T_2B_3,M_2B_3=bar_ntm(x2_3,y2_3,xB_3,yB_3,Fx_2B,Fy_2B,M_2B)
+
+            # Consola 2-a (daca exista)
+            if has_con3:
+                N_con3,T_con3,M_con3=np.zeros(npts),np.zeros(npts),np.zeros(npts)
+                s_con3=np.linspace(0,Lcon3,npts)
+                T_con3=-Fcon3*np.ones(npts)
+                M_con3=-Fcon3*(Lcon3-s_con3)  # maxim la nod 2, zero la capat
+
+            # Momente la capete (afisare)
+            em1,em2=st.columns(2)
+            with em1:
+                st.markdown("**Bara A-1:**")
+                st.latex(rf"M_A = {M_A1_3[0]:.3f}\;\text{{kNm}},\; M_1 = {M_A1_3[-1]:.3f}\;\text{{kNm}}")
+                st.markdown("**Bara 1-C:**")
+                st.latex(rf"M_1 = {M_1C_3[0]:.3f}\;\text{{kNm}},\; M_C = {M_1C_3[-1]:.3f}\;\text{{kNm}}")
+            with em2:
+                st.markdown("**Bara C-2:**")
+                st.latex(rf"M_C = {M_C2_3[0]:.3f}\;\text{{kNm}},\; M_2 = {M_C2_3[-1]:.3f}\;\text{{kNm}}")
+                st.markdown("**Bara 2-B:**")
+                st.latex(rf"M_2 = {M_2B_3[0]:.3f}\;\text{{kNm}},\; M_B = {M_2B_3[-1]:.3f}\;\text{{kNm}}")
+
+            # Verificare M=0 la articulatie C
+            MC_check=M_1C_3[-1]
+            if abs(MC_check)<0.5:
+                st.success(f"M la articulatia C = {MC_check:.4f} kNm ~ 0")
+            else:
+                st.warning(f"M la articulatia C = {MC_check:.4f} kNm (ar trebui ~ 0)")
+
+            # -- Pasul 4: Diagrame N, T, M --
+            st.markdown("### Pasul 4 — Diagrame N, T, M pe Cadru")
+            all_N3=np.concatenate([N_A1_3,N_1C_3,N_C2_3,N_2B_3])
+            all_T3=np.concatenate([T_A1_3,T_1C_3,T_C2_3,T_2B_3])
+            all_M3=np.concatenate([M_A1_3,M_1C_3,M_C2_3,M_2B_3])
+            dim3=max(L3a,max(h1_3a,h2_3a,yC_3))
+            scN3=0.18*dim3/max(0.01,np.max(np.abs(all_N3)))
+            scT3=0.18*dim3/max(0.01,np.max(np.abs(all_T3)))
+            scM3=0.18*dim3/max(0.01,np.max(np.abs(all_M3)))
+
+            cls3=["#1a6faf","#2ca02c","#d62728"]
+            titles3=["N (kN)","T (kN)","M (kNm)"]
+            fig_3a,axes_3a=plt.subplots(1,3,figsize=(18,9),dpi=150)
+
+            for idx_d,(sc_d,vals_list,color,title) in enumerate([
+                (scN3,[N_A1_3,N_1C_3,N_C2_3,N_2B_3],cls3[0],titles3[0]),
+                (scT3,[T_A1_3,T_1C_3,T_C2_3,T_2B_3],cls3[1],titles3[1]),
+                (scM3,[M_A1_3,M_1C_3,M_C2_3,M_2B_3],cls3[2],titles3[2])]):
+                ax=axes_3a[idx_d]
+                bar_coords=[(xA_3,yA_3,x1_3,y1_3),(x1_3,y1_3,xC_3,yC_3),(xC_3,yC_3,x2_3,y2_3),(x2_3,y2_3,xB_3,yB_3)]
+                bars_d=[]
+                for ib,(bx1,by1,bx2,by2) in enumerate(bar_coords):
+                    bars_d.append({'x1':bx1,'y1':by1,'x2':bx2,'y2':by2,'values':vals_list[ib]})
+                if has_con3:
+                    if idx_d==0: con_v=N_con3
+                    elif idx_d==1: con_v=T_con3
+                    else: con_v=M_con3
+                    bars_d.append({'x1':x2_3,'y1':y2_3,'x2':xa_3,'y2':ya_3,'values':con_v})
+                draw_ntm_on_frame(ax,bars_d,color,sc_d)
+                # Articulatie C
+                ax.plot(xC_3,yC_3,"ko",ms=8,zorder=7); ax.plot(xC_3,yC_3,"wo",ms=4,zorder=8)
+                # Reazeme
+                scs3=sc3*0.5
+                draw_pin(ax,xA_3,yA_3,scs3); draw_pin(ax,xB_3,yB_3,scs3)
+                # Noduri
+                for nx_,ny_,lb in [(x1_3,y1_3,"1"),(x2_3,y2_3,"2")]:
+                    ax.plot(nx_,ny_,"ko",ms=4,zorder=6)
+                ax.set_aspect("equal"); ax.axis("off")
+                ax.set_title(title,fontsize=13,fontweight="bold",color=color)
+                ax.set_xlim(xmin3,xmax3); ax.set_ylim(ymin3,ymax3)
+
+            plt.tight_layout()
+            fig_3a.suptitle("Diagrame N, T, M — Cadru cu 3 Articulatii",fontsize=14,fontweight="bold",y=1.01)
+            st.pyplot(fig_3a); plt.close(fig_3a)
+
+            # -- Pasul 5: Verificare --
+            st.markdown("### Pasul 5 — Verificare Echilibru")
+            vm1,vm2,vm3=st.columns(3)
+            vm1.metric("M max",f"{np.max(np.abs(all_M3)):.3f} kNm")
+            vm2.metric("T max",f"{np.max(np.abs(all_T3)):.3f} kN")
+            vm3.metric("N max",f"{np.max(np.abs(all_N3)):.3f} kN")
+            with st.expander("Valori Caracteristice"):
+                st.markdown(f"**Reactiuni:** VA={VA_3:.4f}, VB={VB_3:.4f}, HA={HA_3:.4f}, HB={HB_3:.4f}")
+                st.markdown(f"**M la articulatia C:** {MC_check:.4f} kNm")
+                st.markdown(f"**M nod 1:** {M_A1_3[-1]:.4f} kNm")
+                st.markdown(f"**M nod 2:** {M_C2_3[-1]:.4f} kNm")
+                # Verificare moment la B
+                MB_check=M_2B_3[-1]
+                st.markdown(f"**M la B:** {MB_check:.4f} kNm (trebuie ~ 0 pentru articulatie)")
 
     # ---- ARC ----
     elif tip_struct=="Arc cu 3 Articulații":
