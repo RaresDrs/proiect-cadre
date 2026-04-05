@@ -126,22 +126,26 @@ def draw_distributed_load_perp(ax, q_start_s, q_end_s, c_ang, s_ang, q_mag, q_do
 def draw_moment_arc(ax,x,y,M,r=0.25,color='purple'):
     """Draw moment arc. M>0 = counterclockwise (antiorar), M<0 = clockwise (orar)."""
     if abs(M)<1e-9: return
-    # Arc angles: leave a gap so the arrowhead sits cleanly at the tip
     if M>0:  # counterclockwise
         t=np.linspace(np.radians(40),np.radians(320),150)
     else:    # clockwise
         t=np.linspace(np.radians(320),np.radians(40),150)
-    # Draw arc body (stop a bit before tip to avoid overlap with arrowhead)
-    ax.plot(x+r*np.cos(t[:-8]),y+r*np.sin(t[:-8]),color=color,lw=2.4,zorder=6,solid_capstyle='round')
-    # Arrowhead at the very end of the arc — tangent direction from last segment
+    # Draw arc body up to the tip
+    ax.plot(x+r*np.cos(t),y+r*np.sin(t),color=color,lw=2.4,zorder=6,solid_capstyle='round')
+    # Manual triangle arrowhead at the exact tip
     tip_x=x+r*np.cos(t[-1]); tip_y=y+r*np.sin(t[-1])
-    pre_x=x+r*np.cos(t[-10]); pre_y=y+r*np.sin(t[-10])
-    dx=tip_x-pre_x; dy=tip_y-pre_y
+    # Tangent direction at tip
+    dx=np.cos(t[-1])-np.cos(t[-3]); dy=np.sin(t[-1])-np.sin(t[-3])
     norm=np.sqrt(dx**2+dy**2)
-    if norm>1e-10: dx/=norm; dy/=norm
-    ax.annotate('',xy=(tip_x,tip_y),
-                xytext=(pre_x,pre_y),
-                arrowprops=dict(arrowstyle='-|>',color=color,lw=2.2,mutation_scale=20),zorder=7)
+    if norm<1e-10: return
+    dx/=norm; dy/=norm
+    # Perpendicular to tangent
+    px,py=-dy,dx
+    hs=r*0.45  # arrowhead size
+    tri=np.array([[tip_x,tip_y],
+                  [tip_x-dx*hs+px*hs*0.35, tip_y-dy*hs+py*hs*0.35],
+                  [tip_x-dx*hs-px*hs*0.35, tip_y-dy*hs-py*hs*0.35]])
+    ax.add_patch(plt.Polygon(tri,closed=True,fc=color,ec=color,lw=0.5,zorder=7))
 
 def _force_xy(f):
     """Return (fx_global, fy_global) from a force dict (new or legacy format)."""
