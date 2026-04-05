@@ -223,7 +223,7 @@ if modul == "Calcul Grinzi simplu":
 
     # --- REAZEME la distante personalizate ---
     st.subheader("Reazeme")
-    ro_lbl={0:"Liber",1:"🔺 Articulație (pin)",2:"🔵 Reazem simplu (roller)",3:"▪️ Încastrare (fixed)"}
+    ro_lbl={0:"Liber",1:"Articulație (pin)",2:"Reazem simplu (roller)",3:"Încastrare (fixed)"}
     if "gv_sup" not in st.session_state:
         st.session_state.gv_sup=[{"x":0.0,"tip":1},{"x":float(L),"tip":2}]
     cs_btn=st.columns([1,1,4])
