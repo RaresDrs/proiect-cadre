@@ -19,7 +19,7 @@ Flexible Loading: Support for point loads (via magnitude/angle or components) an
 
 Dual-Notation Input: Switch between Global Coordinates and Component-based force input.
 
-Professional Reporting: (Coming Soon) Export results and diagrams directly to PDF.
+Professional Reporting:Export results and diagrams directly to PDF.
 
 🛠️ Tech Stack
 Language: Python 3.10+
@@ -29,10 +29,11 @@ Framework: Streamlit
 Math & Physics: NumPy
 
 Visualization: Matplotlib
- How it WorksThe engine discretizes the structure into beam elements.
+ How it Works The engine discretizes the structure into beam elements.
  Each element's stiffness matrix is assembled into a global matrix, solving for displacements using:
  [K] * {u} = {F}
- Where:[K] = Global Stiffness Matrix
+ Where:
+ [K] = Global Stiffness Matrix
  {u}= Nodal Displacement Vector
  {F} = Applied Load Vector
  ⚠️ Disclaimer This software is intended for educational and preliminary design check purposes only.
