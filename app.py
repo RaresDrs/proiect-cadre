@@ -11,7 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 # ============================================================
 st.set_page_config(
     page_title="BeamFlow",
-    layout="wide", page_icon="🏗️", initial_sidebar_state="expanded"
+    layout="wide", page_icon="BF", initial_sidebar_state="expanded"
 )
 st.markdown("""
 <style>
@@ -178,7 +178,7 @@ def label_extremes(ax,x_arr,y_arr,color='black'):
 # ============================================================
 # NAVIGARE
 # ============================================================
-st.sidebar.markdown("## 🏗️ BeamFlow")
+st.sidebar.markdown("## BeamFlow")
 st.sidebar.markdown("---")
 modul=st.sidebar.radio("**Selectează Modulul**",[
     "🔧 Calcul 2D Grinzi",
