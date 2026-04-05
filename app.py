@@ -322,14 +322,18 @@ if modul == "🔧 Calcul 2D Grinzi":
     for idx,s in enumerate(st.session_state.gv_sup):
         sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
         lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
-        # label next to support (below-left)
-        _sup_drop=ss*2.8 if s["tip"]==2 else ss*2.2
-        ax1.text(sx_g-ss*0.8,sy_g-_sup_drop,lbl,
-                 fontsize=10,fontweight="bold",color="#1a3a5c",ha="center",va="top",
-                 bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.25"))
-        if s["tip"]==1: draw_pin(ax1,sx_g,sy_g,ss)
-        elif s["tip"]==2: draw_roller(ax1,sx_g,sy_g,ss)
-        elif s["tip"]==3: draw_fixed_bottom(ax1,sx_g,sy_g,c_ang,s_ang,ss)
+        if s["tip"]==1:
+            draw_pin(ax1,sx_g,sy_g,ss)
+            ax1.text(sx_g,sy_g-ss*2.4,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
+                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.25"))
+        elif s["tip"]==2:
+            draw_roller(ax1,sx_g,sy_g,ss)
+            ax1.text(sx_g,sy_g-ss*3.2,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
+                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.25"))
+        elif s["tip"]==3:
+            draw_fixed_bottom(ax1,sx_g,sy_g,c_ang,s_ang,ss)
+            ax1.text(sx_g-c_ang*ss*1.2,sy_g-s_ang*ss*1.2-ss*0.8,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
+                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.25"))
 
     # Draw q perpendicular to bar (no label — label goes below beam separately)
     if q_abs>0 and q_end>q_start:
@@ -484,13 +488,18 @@ if modul == "🔧 Calcul 2D Grinzi":
                 for idx,s in enumerate(st.session_state.gv_sup):
                     sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
                     lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
-                    _sup_drop_r=ss*2.8 if s["tip"]==2 else ss*2.2
-                    ax_reac.text(sx_g-ss*0.8,sy_g-_sup_drop_r,lbl,
-                                 fontsize=10,fontweight="bold",color="#1a3a5c",ha="center",va="top",
-                                 bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.22"))
-                    if s["tip"]==1: draw_pin(ax_reac,sx_g,sy_g,ss)
-                    elif s["tip"]==2: draw_roller(ax_reac,sx_g,sy_g,ss)
-                    elif s["tip"]==3: draw_fixed_bottom(ax_reac,sx_g,sy_g,c_ang,s_ang,ss*0.75)
+                    if s["tip"]==1:
+                        draw_pin(ax_reac,sx_g,sy_g,ss)
+                        ax_reac.text(sx_g,sy_g-ss*2.4,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
+                                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.22"))
+                    elif s["tip"]==2:
+                        draw_roller(ax_reac,sx_g,sy_g,ss)
+                        ax_reac.text(sx_g,sy_g-ss*3.2,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
+                                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.22"))
+                    elif s["tip"]==3:
+                        draw_fixed_bottom(ax_reac,sx_g,sy_g,c_ang,s_ang,ss*0.75)
+                        ax_reac.text(sx_g-c_ang*ss*1.2,sy_g-s_ang*ss*1.2-ss*0.8,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",
+                                     ha="center",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.22"))
 
                 # Încărcări aplicate — q fără label (R va arăta valoarea)
                 if q_abs>0 and q_end>q_start:
@@ -679,30 +688,31 @@ if modul == "🔧 Calcul 2D Grinzi":
 
                 # ── PDF cu pași detaliați de calcul ──
                 def _pdf_text_page(pdf, lines, title="", fontsize=10):
-                    """Create a compact text PDF page using matplotlib."""
+                    """Create a well-spaced text PDF page using matplotlib."""
                     fig_t,ax_t=plt.subplots(figsize=(8.27,11.69),dpi=150)
                     ax_t.axis('off')
                     if title:
-                        ax_t.text(0.5,0.97,title,transform=ax_t.transAxes,fontsize=13,fontweight='bold',
+                        ax_t.text(0.5,0.96,title,transform=ax_t.transAxes,fontsize=14,fontweight='bold',
                                   ha='center',va='top',color='#0d1b2a')
-                        ax_t.plot([0.05,0.95],[0.957,0.957],transform=ax_t.transAxes,color='#E8641A',lw=2)
-                    y_pos=0.94 if title else 0.97
+                        ax_t.plot([0.05,0.95],[0.945,0.945],transform=ax_t.transAxes,color='#E8641A',lw=2)
+                    y_pos=0.92 if title else 0.96
                     for line in lines:
                         if y_pos<0.03: break
                         if line.startswith("##"):
-                            y_pos-=0.005
-                            ax_t.text(0.05,y_pos,line[2:].strip(),transform=ax_t.transAxes,fontsize=11,
+                            y_pos-=0.012
+                            ax_t.text(0.05,y_pos,line[2:].strip(),transform=ax_t.transAxes,fontsize=11.5,
                                       fontweight='bold',color='#1a3a5c',va='top')
-                            y_pos-=0.022
+                            y_pos-=0.026
                         elif line=="---":
-                            ax_t.plot([0.05,0.95],[y_pos,y_pos],transform=ax_t.transAxes,color='#ccc',lw=0.8)
-                            y_pos-=0.008
-                        elif line=="":
                             y_pos-=0.006
+                            ax_t.plot([0.05,0.95],[y_pos,y_pos],transform=ax_t.transAxes,color='#bbb',lw=0.8)
+                            y_pos-=0.012
+                        elif line=="":
+                            y_pos-=0.010
                         else:
-                            ax_t.text(0.05,y_pos,line,transform=ax_t.transAxes,fontsize=fontsize,va='top',
+                            ax_t.text(0.06,y_pos,line,transform=ax_t.transAxes,fontsize=fontsize,va='top',
                                       color='#222',family='serif')
-                            y_pos-=0.018
+                            y_pos-=0.022
                     fig_t.subplots_adjust(left=0.05,right=0.95,top=0.98,bottom=0.02)
                     pdf.savefig(fig_t,bbox_inches="tight"); plt.close(fig_t)
 
