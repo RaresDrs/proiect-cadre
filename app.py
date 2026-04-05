@@ -181,20 +181,19 @@ def label_extremes(ax,x_arr,y_arr,color='black'):
 st.sidebar.markdown("## BeamFlow")
 st.sidebar.markdown("---")
 modul=st.sidebar.radio("**Selectează Modulul**",[
-    "🔧 Calcul 2D Grinzi",
-    "📐 Rezistența Materialelor",
-    "📏 Statica 1 — Static Determinate",
-    "🔁 Statica 2 — Static Nedeterminate",
+    "Calcul Grinzi simplu",
+    "Rezistența Materialelor",
+    "Statica 1 — Static Determinate",
+    "Statica 2 — Static Nedeterminate",
 ],key="nav_modul_main")
 st.sidebar.markdown("---")
-st.sidebar.markdown("<small style='color:#aaa;'>Bazat pe manualele românești:<br>975-4.pdf Statica1<br>138-3.pdf Statica2<br>481-0.pdf RezMat</small>",unsafe_allow_html=True)
+st.sidebar.markdown("<small style='color:#aaa;'>Bazat pe manuale / îndrumătoare românești</small>",unsafe_allow_html=True)
 
 # ============================================================
 # MODUL 1: CALCUL 2D GRINZI
 # ============================================================
-if modul == "🔧 Calcul 2D Grinzi":
-    st.title("Calcul 2D Grinzi")
-    st.markdown("Analiză structurală prin **Metoda Elementelor Finite** — grindă/bară 2D cu reazeme la distanțe personalizate.")
+if modul == "Calcul Grinzi simplu":
+    st.title("Calcul Grinzi simplu")
     st.markdown("---")
 
     # --- SIDEBAR: GEOMETRIE + SECTIUNE + MATERIAL ---
