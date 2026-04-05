@@ -673,7 +673,7 @@ if modul == "Calcul Grinzi simplu":
                             st.latex(rf"T\text{{ se anulează la }}x_0={x0:.3f}\text{{m}},\quad M_{{max}}={m0:.3f}\text{{kNm}}")
 
                 # Model de calcul
-                with st.expander("📐 Model de calcul (pas cu pas)"):
+                with st.expander("Model de calcul (pas cu pas)"):
                     st.markdown(f"""**Structura:** {len(st.session_state.gv_sup)} reazeme, {n_sup} noduri FEM, {ne} elemente
 **EI** = {E:.2e} kN/m² × {I_sec:.4e} m⁴ = {E*I_sec:.3e} kNm²
 **EA** = {E:.2e} × {A_sec:.4f} = {E*A_sec:.3e} kN""")
@@ -859,7 +859,7 @@ if modul == "Calcul Grinzi simplu":
                     # Ultima pagină: Diagrame N, T, M
                     pdf.savefig(fig_r,bbox_inches="tight")
 
-                st.download_button("📥 Descarcă PDF",buf.getvalue(),"Grinzi2D.pdf","application/pdf",key="gv_dl")
+                st.download_button("Descarcă PDF",buf.getvalue(),"Grinzi2D.pdf","application/pdf",key="gv_dl")
                 plt.close(fig_r)
             except np.linalg.LinAlgError:
                 st.error("🔴 MECANISM! Matricea de rigiditate e singulară — verifică reazemele.")
