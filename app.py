@@ -10,13 +10,17 @@ from matplotlib.backends.backend_pdf import PdfPages
 # PAGINA
 # ============================================================
 st.set_page_config(
-    page_title="EduStruct — Mini-SAP2000 Educational",
+    page_title="BeamFlow",
     layout="wide", page_icon="🏗️", initial_sidebar_state="expanded"
 )
 st.markdown("""
 <style>
 [data-testid="stSidebar"]{background:#0d1b2a;}
 [data-testid="stSidebar"] *{color:#e8e8e8!important;}
+[data-testid="stSidebar"] input{color:#111111!important;background:#ffffff!important;}
+[data-testid="stSidebar"] input[type="number"]{color:#111111!important;background:#ffffff!important;}
+[data-testid="stSidebar"] .stNumberInput input{color:#111111!important;background:#ffffff!important;}
+[data-testid="stSidebar"] label{color:#e8e8e8!important;}
 h1{color:#0d1b2a;border-bottom:3px solid #E8641A;padding-bottom:8px;}
 h2{color:#1a3a5c;}h3{color:#0d1b2a;}
 .result-box{background:linear-gradient(135deg,#f0f4ff,#e8f0fe);border-left:5px solid #E8641A;
@@ -26,7 +30,7 @@ div[data-testid="stMetric"]{background:#f8f9fa;border-radius:10px;padding:12px;b
 .stTabs [aria-selected="true"]{background:#E8641A!important;color:white!important;}
 </style>
 """, unsafe_allow_html=True)
-st.markdown("<div style='text-align:right;color:#999;font-size:14px;'>Stud. Pop Rareş Darius | EduStruct v2.0</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:right;color:#999;font-size:14px;'>Stud. Pop Rareş Darius | BeamFlow v2.0</div>", unsafe_allow_html=True)
 
 # ============================================================
 # UTILITARE
@@ -77,10 +81,10 @@ def draw_force_arrow(ax,x,y,fx,fy,label,color='red',scale=0.8,lw=1.8):
     ux,uy=fx/mag,fy/mag
     ax.annotate('',xy=(x,y),xytext=(x-ux*scale,y-uy*scale),
                 arrowprops=dict(arrowstyle='->',color=color,lw=lw,mutation_scale=12))
-    # Label: behind tail + perpendicular nudge
+    # Label: at midpoint of arrow + perpendicular nudge (avoids overlap with tip/tail)
     perp_x,perp_y=-uy,ux
-    lx=x-ux*scale*1.45+perp_x*scale*0.35
-    ly=y-uy*scale*1.45+perp_y*scale*0.35
+    lx=x-ux*scale*0.5+perp_x*scale*0.55
+    ly=y-uy*scale*0.5+perp_y*scale*0.55
     ax.text(lx,ly,label,color=color,fontsize=7.5,fontweight='bold',
             ha='center',va='center',bbox=dict(fc='white',alpha=0.88,ec=color,lw=0.5,pad=1.2,boxstyle='round,pad=0.2'))
 
@@ -119,17 +123,33 @@ def draw_distributed_load_perp(ax, q_start_s, q_end_s, c_ang, s_ang, q_mag, q_do
             f"q={q_mag:.1f}kN/m",color=color,fontsize=9,fontweight='bold',ha='center',va='center',
             bbox=dict(fc='white',alpha=0.7,ec='none',pad=1))
 
-def draw_moment_arc(ax,x,y,M,r=0.25,color='purple',fiber_label=None):
+def draw_moment_arc(ax,x,y,M,r=0.25,color='purple'):
+    """Draw moment arc. M>0 = counterclockwise (antiorar), M<0 = clockwise (orar)."""
     if abs(M)<1e-9: return
-    t1,t2=(30,330) if M>0 else (210,510)
-    ax.add_patch(Arc((x,y),r*2,r*2,angle=0,theta1=t1,theta2=t2,color=color,lw=1.4,zorder=6))
-    ang=np.radians(t2 if M>0 else t1); eps=0.01*(-1 if M>0 else 1)
-    ax.annotate('',xy=(x+r*np.cos(ang),y+r*np.sin(ang)),
-                xytext=(x+r*np.cos(ang-eps),y+r*np.sin(ang-eps)),
-                arrowprops=dict(arrowstyle='->',color=color,lw=1.2,mutation_scale=10),zorder=6)
-    if fiber_label:
-        ax.text(x+r*1.9,y-r*1.1,fiber_label,fontsize=7,color=color,ha='center',va='top',
-                bbox=dict(fc='white',alpha=0.85,ec=color,lw=0.5,pad=1.2,boxstyle='round,pad=0.2'))
+    # Arc as line plot (better control than Arc patch)
+    if M>0:  # counterclockwise: arc from 50° to 310° going CCW
+        t=np.linspace(np.radians(50),np.radians(310),120)
+    else:    # clockwise: arc from 310° to 50° going CW
+        t=np.linspace(np.radians(310),np.radians(50),120)
+    ax.plot(x+r*np.cos(t),y+r*np.sin(t),color=color,lw=2.4,zorder=6,solid_capstyle='round')
+    # Arrowhead at tip — use tangent direction at arc end
+    tip_x=x+r*np.cos(t[-1]); tip_y=y+r*np.sin(t[-1])
+    dx=x+r*np.cos(t[-1])-x-r*np.cos(t[-4])
+    dy=y+r*np.sin(t[-1])-y-r*np.sin(t[-4])
+    norm=np.sqrt(dx**2+dy**2)
+    if norm>1e-10: dx/=norm; dy/=norm
+    # Draw a prominent arrowhead by annotating tip→tip+tiny step
+    ax.annotate('',xy=(tip_x+dx*0.001,tip_y+dy*0.001),
+                xytext=(tip_x-dx*0.15,tip_y-dy*0.15),
+                arrowprops=dict(arrowstyle='-|>',color=color,lw=2.0,mutation_scale=22),zorder=7)
+
+def _force_xy(f):
+    """Return (fx_global, fy_global) from a force dict (new or legacy format)."""
+    if "axa" in f:
+        axa=f.get("axa","Y"); F=f.get("F",-10.0); al=f.get("alpha",0.0)
+        base=0.0 if axa=="X" else 90.0
+        return F*np.cos(np.radians(base+al)), F*np.sin(np.radians(base+al))
+    return f.get("fx",0.0), f.get("fy",0.0)
 
 def fill_diagram(ax,x,y,color,label,alpha=0.32):
     ax.fill_between(x,y,0,color=color,alpha=alpha); ax.plot(x,y,color=color,lw=2.2)
@@ -151,8 +171,7 @@ def label_extremes(ax,x_arr,y_arr,color='black'):
 # ============================================================
 # NAVIGARE
 # ============================================================
-st.sidebar.markdown("## 🏗️ EduStruct")
-st.sidebar.markdown("<small>Mini-SAP2000 Educational</small>",unsafe_allow_html=True)
+st.sidebar.markdown("## 🏗️ BeamFlow")
 st.sidebar.markdown("---")
 modul=st.sidebar.radio("**Selectează Modulul**",[
     "🔧 Calcul 2D Grinzi",
@@ -179,10 +198,10 @@ if modul == "🔧 Calcul 2D Grinzi":
     def _gA(): st.session_state.gv_A=float(st.session_state.gv_Asl)
     def _gAn(): st.session_state.gv_A=float(st.session_state.gv_Ani)
     st.sidebar.header("1. Geometrie")
-    st.sidebar.slider("Lungime L (m)",0.5,30.0,float(st.session_state.gv_L),0.5,key="gv_Lsl",on_change=_gL)
-    L=st.sidebar.number_input("L exact (m)",value=float(st.session_state.gv_L),min_value=0.5,key="gv_Lni",on_change=_gLn)
+    st.sidebar.slider("Lungime (m)",0.5,30.0,float(st.session_state.gv_L),0.5,key="gv_Lsl",on_change=_gL)
+    L=st.sidebar.number_input("Lungime (m)",value=float(st.session_state.gv_L),min_value=0.5,key="gv_Lni",on_change=_gLn,label_visibility="visible")
     st.sidebar.slider("Înclinare (°)",0.0,85.0,float(st.session_state.gv_A),1.0,key="gv_Asl",on_change=_gA)
-    theta_deg=st.sidebar.number_input("Unghi exact (°)",value=float(st.session_state.gv_A),min_value=0.0,max_value=85.0,key="gv_Ani",on_change=_gAn)
+    theta_deg=st.sidebar.number_input("Unghi (°)",value=float(st.session_state.gv_A),min_value=0.0,max_value=85.0,key="gv_Ani",on_change=_gAn)
     th=np.radians(theta_deg); c_ang,s_ang=np.cos(th),np.sin(th)
     end_x,end_y=L*c_ang,L*s_ang
 
@@ -237,7 +256,7 @@ if modul == "🔧 Calcul 2D Grinzi":
     if "gv_forces" not in st.session_state: st.session_state.gv_forces=[]
     fa,fb=st.columns([1,5])
     with fa:
-        if st.button("＋ Forță/Moment",key="gv_fadd"): st.session_state.gv_forces.append({"tip":"F","P":10.0,"alpha":-90.0,"dist":float(L)/2})
+        if st.button("＋ Acțiune",key="gv_fadd"): st.session_state.gv_forces.append({"tip":"F","axa":"Y","F":-10.0,"alpha":0.0,"dist":float(L)/2})
         if st.button("－ Șterge ultima",key="gv_fdel"):
             if st.session_state.gv_forces: st.session_state.gv_forces.pop()
     f_edited=[]
@@ -246,18 +265,23 @@ if modul == "🔧 Calcul 2D Grinzi":
         for i,f in enumerate(st.session_state.gv_forces):
             with fcols[i%3]:
                 st.markdown(f"**Acțiunea {i+1}**")
-                tip=st.selectbox("Tip",["F — Forță (P,α)","M — Moment"],index=0 if f["tip"]=="F" else 1,key=f"gv_ft_{i}")
-                tip_k="F" if tip.startswith("F") else "M"
+                tip=st.selectbox("Tip",["Forță","Moment concentrat"],index=0 if f["tip"]=="F" else 1,key=f"gv_ft_{i}")
+                tip_k="F" if tip=="Forță" else "M"
                 if tip_k=="F":
-                    P=st.number_input("P (kN) — pozitiv",min_value=0.01,value=abs(f.get("P",10.0)),step=1.0,key=f"gv_fP_{i}")
-                    alpha=st.number_input("α (°) — 0=→, 90=↑, −90=↓, 180=←",value=float(f.get("alpha",-90.0)),min_value=-180.0,max_value=180.0,step=5.0,key=f"gv_fa_{i}")
-                    d=st.number_input("x (m)",0.0,float(L),float(np.clip(f.get("dist",L/2),0,L)),step=0.5,key=f"gv_fd_{i}")
-                    fx_g=P*np.cos(np.radians(alpha)); fy_g=P*np.sin(np.radians(alpha))
-                    st.caption(f"Fx={fx_g:.2f} kN | Fy={fy_g:.2f} kN")
-                    f_edited.append({"tip":"F","P":P,"alpha":alpha,"dist":d})
+                    axa_def=f.get("axa","Y")
+                    axa=st.selectbox("Axă",["X","Y"],index=0 if axa_def=="X" else 1,key=f"gv_faxa_{i}")
+                    if axa=="X":
+                        F_val=st.number_input("F (kN)  [ + → dreapta  |  − → stânga ]",value=float(f.get("F",10.0) if f.get("axa","Y")=="X" else 10.0),step=1.0,key=f"gv_fF_{i}")
+                    else:
+                        F_val=st.number_input("F (kN)  [ + → sus  |  − → jos ]",value=float(f.get("F",-10.0) if f.get("axa","Y")=="Y" else -10.0),step=1.0,key=f"gv_fF_{i}")
+                    al=st.number_input("Unghi față de axă α (°)",value=float(f.get("alpha",0.0)),min_value=-90.0,max_value=90.0,step=5.0,key=f"gv_fal_{i}")
+                    d=st.number_input("Poziție x (m)",0.0,float(L),float(np.clip(f.get("dist",L/2),0,L)),step=0.5,key=f"gv_fd_{i}")
+                    fx_show,fy_show=_force_xy({"axa":axa,"F":F_val,"alpha":al})
+                    st.caption(f"→ Fx={fx_show:.2f} kN | Fy={fy_show:.2f} kN")
+                    f_edited.append({"tip":"F","axa":axa,"F":F_val,"alpha":al,"dist":d})
                 else:
                     Mval=st.number_input("M (kNm) — + antiorar",value=float(f.get("val",5.0)),step=1.0,key=f"gv_fM_{i}")
-                    d=st.number_input("x (m)",0.0,float(L),float(np.clip(f.get("dist",L/2),0,L)),step=0.5,key=f"gv_fd2_{i}")
+                    d=st.number_input("Poziție x (m)",0.0,float(L),float(np.clip(f.get("dist",L/2),0,L)),step=0.5,key=f"gv_fd2_{i}")
                     f_edited.append({"tip":"M","val":Mval,"dist":d})
         st.session_state.gv_forces=f_edited
 
@@ -308,17 +332,13 @@ if modul == "🔧 Calcul 2D Grinzi":
     for f in st.session_state.gv_forces:
         d=f.get("dist",0); fp=d*c_ang; fyp=d*s_ang
         if f["tip"]=="F":
-            P=f["P"]; alpha_r=np.radians(f["alpha"])
-            fx_g=P*np.cos(alpha_r); fy_g=P*np.sin(alpha_r)
-            draw_force_arrow(ax1,fp,fyp,fx_g,fy_g,f"{P:.0f}kN",color="#c00",scale=arsc)
-            if abs(fx_g)>0.1 and abs(fy_g)>0.1:
-                ax1.text(fp+fx_g/P*arsc*0.5+0.05,fyp+fy_g/P*arsc*0.5,
-                         f"Fx={fx_g:.1f}\nFy={fy_g:.1f}",fontsize=7,color="#900",
-                         ha="left",va="center",bbox=dict(fc="white",alpha=0.7,ec="none",pad=1))
+            fx_g=f.get("fx",0.0); fy_g=f.get("fy",0.0)
+            mag=np.sqrt(fx_g**2+fy_g**2)
+            lbl=f"{mag:.0f}kN" if mag>1e-9 else "F"
+            draw_force_arrow(ax1,fp,fyp,fx_g,fy_g,lbl,color="#c00",scale=arsc)
         else:
             _Mv=f.get("val",0)
-            _fi_lbl="f.î. ↓" if _Mv>0 else "f.î. ↑"
-            draw_moment_arc(ax1,fp,fyp,_Mv,r=ss*1.05,color="purple",fiber_label=_fi_lbl)
+            draw_moment_arc(ax1,fp,fyp,_Mv,r=ss*1.05,color="purple")
             ax1.text(fp+ss*2.2,fyp+ss*0.6,f"M={_Mv:.0f}kNm",fontsize=8,color="purple",fontweight="bold",
                      bbox=dict(fc="white",alpha=0.88,ec="purple",lw=0.5,pad=1.2,boxstyle="round,pad=0.2"))
 
@@ -326,9 +346,10 @@ if modul == "🔧 Calcul 2D Grinzi":
     # Build sorted list of key x-positions (supports + ends)
     key_xs=sorted(set([0.0,L]+[s["x"] for s in st.session_state.gv_sup]))
 
-    # 1) Overall L — jos față de bară
+    # 1) Overall L — jos față de bară (mai departe pentru a nu se suprapune cu q)
+    _q_extra=max(0.8,q_abs*0.035+0.25)*1.3 if q_abs>0 else 0
     _draw_dim_line(ax1,0,0,end_x,end_y,f"L = {L:.2f} m",
-                   _dim_drop*1.3,_tick_h,above=False)
+                   _dim_drop*1.3+_q_extra,_tick_h,above=False)
 
     # 2) Segmente — sus față de bară
     if len(key_xs)>2:
@@ -344,7 +365,7 @@ if modul == "🔧 Calcul 2D Grinzi":
 
     mg=max(L*0.22,1.5)
     ax1.set_xlim(min(0,end_x)-mg, max(0,end_x)+mg)
-    ax1.set_ylim(min(0,end_y)-_dim_drop*1.8-mg*0.3, max(0,end_y)+_dim_drop*1.1+mg*0.5)
+    ax1.set_ylim(min(0,end_y)-_dim_drop*1.8-mg*0.3-_q_extra, max(0,end_y)+_dim_drop*1.1+mg*0.5)
     ax1.set_aspect("equal"); ax1.axis("off")
     g_txt="static determinată" if G_val==0 else (f"nedeterminată ns={G_val}" if G_val>0 else "MECANISM")
     ax1.set_title(f"θ = {theta_deg:.0f}°  |  L = {L:.1f} m",
@@ -387,8 +408,7 @@ if modul == "🔧 Calcul 2D Grinzi":
                 for f in st.session_state.gv_forces:
                     ni=nidx(f.get("dist",0)); base=3*ni
                     if f["tip"]=="F":
-                        alpha_r=np.radians(f["alpha"]); P=f["P"]
-                        F_g[base]+=P*np.cos(alpha_r); F_g[base+1]+=P*np.sin(alpha_r)
+                        F_g[base]+=f.get("fx",0.0); F_g[base+1]+=f.get("fy",0.0)
                     else: F_g[base+2]+=f.get("val",0)
 
                 # Boundary conditions
@@ -471,13 +491,13 @@ if modul == "🔧 Calcul 2D Grinzi":
                 for f in st.session_state.gv_forces:
                     d=f.get("dist",0); fp=d*c_ang; fyp=d*s_ang
                     if f["tip"]=="F":
-                        alpha_r=np.radians(f["alpha"]); P=f["P"]
-                        draw_force_arrow(ax_reac,fp,fyp,P*np.cos(alpha_r),P*np.sin(alpha_r),
-                                         f"{P:.0f}kN",color="#c00",scale=_rsc_arr)
+                        fx_g=f.get("fx",0.0); fy_g=f.get("fy",0.0)
+                        mag=np.sqrt(fx_g**2+fy_g**2)
+                        lbl=f"{mag:.0f}kN" if mag>1e-9 else "F"
+                        draw_force_arrow(ax_reac,fp,fyp,fx_g,fy_g,lbl,color="#c00",scale=_rsc_arr)
                     else:
                         _Mv=f.get("val",0)
-                        draw_moment_arc(ax_reac,fp,fyp,_Mv,r=ss*1.05,color="purple",
-                                        fiber_label="f.î. ↓" if _Mv>0 else "f.î. ↑")
+                        draw_moment_arc(ax_reac,fp,fyp,_Mv,r=ss*1.05,color="purple")
 
                 # ── Rezultantă q ──
                 if q_abs>0 and q_end>q_start:
@@ -511,19 +531,19 @@ if modul == "🔧 Calcul 2D Grinzi":
                     VA_v=R_g[base+1] if s["tip"] in [1,2,3] else 0.0
                     MA_v=R_g[base+2] if s["tip"]==3 else 0.0
 
-                    # VA: ancorată mai jos (sub simbol reazem) — perpendicular pe bară în jos
-                    v_off_x=s_ang*ss*2.2; v_off_y=-c_ang*ss*2.2
+                    # VA: global Y — origin direct sub nod (global frame), vizibil la orice inclinare
+                    va_drop=ss*3.0+abs(s_ang)*ss*2.0  # extra drop for inclined beams
+                    va_ox=sx_g; va_oy=sy_g-va_drop
                     if abs(VA_v)>1e-4:
-                        draw_force_arrow(ax_reac,sx_g+v_off_x,sy_g+v_off_y,
+                        draw_force_arrow(ax_reac,va_ox,va_oy,
                                          0,VA_v,f"V{lbl}={VA_v:.2f}kN",
                                          color=_cV,scale=_rsc_arr)
 
-                    # HA: decalat lateral față de axul barei (±perp)
-                    # semn HA determină stânga/dreapta — offsetăm și perpendicular
-                    h_side=1.0 if s["x"]<=L/2 else -1.0  # stânga→sus-perp, dreapta→jos-perp
-                    h_off_x=-s_ang*ss*1.5*h_side; h_off_y=c_ang*ss*1.5*h_side
+                    # HA: global X — origin lateral față de nod (stânga/dreapta)
+                    ha_side=-1.0 if HA_v>=0 else 1.0  # tail to left if arrow →
+                    ha_ox=sx_g+ha_side*_rsc_arr*1.1; ha_oy=sy_g+c_ang*ss*1.0
                     if abs(HA_v)>1e-4:
-                        draw_force_arrow(ax_reac,sx_g+h_off_x,sy_g+h_off_y,
+                        draw_force_arrow(ax_reac,ha_ox,ha_oy,
                                          HA_v,0,f"H{lbl}={HA_v:.2f}kN",
                                          color=_cH,scale=_rsc_arr)
 
@@ -549,28 +569,20 @@ if modul == "🔧 Calcul 2D Grinzi":
                 draw_axes(ax_reac,min(0,end_x)-1.2,min(0,end_y)-0.3,length=0.7)
                 mg=max(L*0.22,1.5)
                 ax_reac.set_xlim(min(0,end_x)-mg,max(0,end_x)+mg)
-                ax_reac.set_ylim(min(0,end_y)-_dim_drop*2.2-mg*0.4,max(0,end_y)+_dim_drop*1.0+mg*0.5)
+                _extra_bot=ss*3.0+abs(s_ang)*ss*2.0+_rsc_arr+0.8
+                ax_reac.set_ylim(min(0,end_y)-_dim_drop*2.2-mg*0.4-_extra_bot,max(0,end_y)+_dim_drop*1.0+mg*0.5)
                 ax_reac.set_aspect("equal"); ax_reac.axis("off")
                 ax_reac.set_title("Schiță cu Reacțiuni la Reazeme",fontsize=12,fontweight="bold",pad=10)
                 st.pyplot(fig_reac); plt.close(fig_reac)
 
-                # Metrics tabel
-                rcols=st.columns(min(len(st.session_state.gv_sup),4))
-                for idx,s in enumerate(st.session_state.gv_sup):
-                    ni=nidx(s["x"]); base=3*ni; lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
-                    with rcols[idx%4]:
-                        st.markdown(f"**Reazem {lbl} — x={s['x']:.1f}m**")
-                        if s["tip"] in [1,3]: st.metric(f"H{lbl} (kN)",f"{R_g[base]:.3f}")
-                        if s["tip"] in [1,2,3]: st.metric(f"V{lbl} (kN)",f"{R_g[base+1]:.3f}")
-                        if s["tip"]==3: st.metric(f"M{lbl} (kNm)",f"{R_g[base+2]:.3f}")
 
                 # Echilibru global
                 Fx_sum=sum(R_g[3*nidx(s["x"])] for s in st.session_state.gv_sup if s["tip"] in [1,3])
                 Fy_sum=sum(R_g[3*nidx(s["x"])+1] for s in st.session_state.gv_sup if s["tip"] in [1,2,3])
                 for f in st.session_state.gv_forces:
                     if f["tip"]=="F":
-                        Fx_sum+=f["P"]*np.cos(np.radians(f["alpha"]))
-                        Fy_sum+=f["P"]*np.sin(np.radians(f["alpha"]))
+                        Fx_sum+=f.get("fx",0.0)
+                        Fy_sum+=f.get("fy",0.0)
                 if q_abs>0: Fy_sum+=(-q_eff)*(q_end-q_start)*c_ang  # global y from perp q
 
                 eq1,eq2=st.columns(2)
