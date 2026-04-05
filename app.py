@@ -126,22 +126,22 @@ def draw_distributed_load_perp(ax, q_start_s, q_end_s, c_ang, s_ang, q_mag, q_do
 def draw_moment_arc(ax,x,y,M,r=0.25,color='purple'):
     """Draw moment arc. M>0 = counterclockwise (antiorar), M<0 = clockwise (orar)."""
     if abs(M)<1e-9: return
-    # Arc as line plot (better control than Arc patch)
-    if M>0:  # counterclockwise: arc from 50° to 310° going CCW
-        t=np.linspace(np.radians(50),np.radians(310),120)
-    else:    # clockwise: arc from 310° to 50° going CW
-        t=np.linspace(np.radians(310),np.radians(50),120)
-    ax.plot(x+r*np.cos(t),y+r*np.sin(t),color=color,lw=2.4,zorder=6,solid_capstyle='round')
-    # Arrowhead at tip — use tangent direction at arc end
+    # Arc angles: leave a gap so the arrowhead sits cleanly at the tip
+    if M>0:  # counterclockwise
+        t=np.linspace(np.radians(40),np.radians(320),150)
+    else:    # clockwise
+        t=np.linspace(np.radians(320),np.radians(40),150)
+    # Draw arc body (stop a bit before tip to avoid overlap with arrowhead)
+    ax.plot(x+r*np.cos(t[:-8]),y+r*np.sin(t[:-8]),color=color,lw=2.4,zorder=6,solid_capstyle='round')
+    # Arrowhead at the very end of the arc — tangent direction from last segment
     tip_x=x+r*np.cos(t[-1]); tip_y=y+r*np.sin(t[-1])
-    dx=x+r*np.cos(t[-1])-x-r*np.cos(t[-4])
-    dy=y+r*np.sin(t[-1])-y-r*np.sin(t[-4])
+    pre_x=x+r*np.cos(t[-10]); pre_y=y+r*np.sin(t[-10])
+    dx=tip_x-pre_x; dy=tip_y-pre_y
     norm=np.sqrt(dx**2+dy**2)
     if norm>1e-10: dx/=norm; dy/=norm
-    # Draw a prominent arrowhead by annotating tip→tip+tiny step
-    ax.annotate('',xy=(tip_x+dx*0.001,tip_y+dy*0.001),
-                xytext=(tip_x-dx*0.15,tip_y-dy*0.15),
-                arrowprops=dict(arrowstyle='-|>',color=color,lw=2.0,mutation_scale=22),zorder=7)
+    ax.annotate('',xy=(tip_x,tip_y),
+                xytext=(pre_x,pre_y),
+                arrowprops=dict(arrowstyle='-|>',color=color,lw=2.2,mutation_scale=20),zorder=7)
 
 def _force_xy(f):
     """Return (fx_global, fy_global) from a force dict (new or legacy format)."""
@@ -151,10 +151,17 @@ def _force_xy(f):
         return F*np.cos(np.radians(base+al)), F*np.sin(np.radians(base+al))
     return f.get("fx",0.0), f.get("fy",0.0)
 
-def fill_diagram(ax,x,y,color,label,alpha=0.32):
+def fill_diagram(ax,x,y,color,label,alpha=0.32,sign_labels=True):
     ax.fill_between(x,y,0,color=color,alpha=alpha); ax.plot(x,y,color=color,lw=2.2)
     ax.axhline(0,color='black',lw=1.2); ax.set_ylabel(label,color=color,fontweight='bold',fontsize=10)
     ax.grid(True,alpha=0.18,linestyle='--'); ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
+    if sign_labels:
+        ymax=np.max(y); ymin=np.min(y)
+        x_left=x[0]; x_range=x[-1]-x[0]
+        if ymax>1e-6:
+            ax.text(x_left-x_range*0.01,ymax*0.15,"+",fontsize=9,color=color,alpha=0.55,fontweight='bold',va='center',ha='right')
+        if ymin<-1e-6:
+            ax.text(x_left-x_range*0.01,ymin*0.15,"−",fontsize=9,color=color,alpha=0.55,fontweight='bold',va='center',ha='right')
 
 def label_extremes(ax,x_arr,y_arr,color='black'):
     shown=set()
@@ -256,7 +263,7 @@ if modul == "🔧 Calcul 2D Grinzi":
     if "gv_forces" not in st.session_state: st.session_state.gv_forces=[]
     fa,fb=st.columns([1,5])
     with fa:
-        if st.button("＋ Acțiune",key="gv_fadd"): st.session_state.gv_forces.append({"tip":"F","axa":"Y","F":-10.0,"alpha":0.0,"dist":float(L)/2})
+        if st.button("＋ Încărcare",key="gv_fadd"): st.session_state.gv_forces.append({"tip":"F","axa":"Y","F":-10.0,"alpha":0.0,"dist":float(L)/2})
         if st.button("－ Șterge ultima",key="gv_fdel"):
             if st.session_state.gv_forces: st.session_state.gv_forces.pop()
     f_edited=[]
@@ -264,7 +271,7 @@ if modul == "🔧 Calcul 2D Grinzi":
         fcols=st.columns(min(len(st.session_state.gv_forces),3))
         for i,f in enumerate(st.session_state.gv_forces):
             with fcols[i%3]:
-                st.markdown(f"**Acțiunea {i+1}**")
+                st.markdown(f"**Încărcarea {i+1}**")
                 tip=st.selectbox("Tip",["Forță","Moment concentrat"],index=0 if f["tip"]=="F" else 1,key=f"gv_ft_{i}")
                 tip_k="F" if tip=="Forță" else "M"
                 if tip_k=="F":
@@ -659,9 +666,231 @@ if modul == "🔧 Calcul 2D Grinzi":
                     st.markdown("**Eforturi în secțiune prin integrare:**")
                     st.latex(r"N(x)=\text{const./element},\quad T(x)=T_0+q\cdot x,\quad M(x)=M_0+T_0\cdot x+\frac{q x^2}{2}")
 
+                # ── PDF cu pași detaliați de calcul ──
+                def _pdf_text_page(pdf, lines, title="", fontsize=11):
+                    """Create a text-only PDF page using matplotlib."""
+                    fig_t,ax_t=plt.subplots(figsize=(8.27,11.69),dpi=150)
+                    ax_t.axis('off')
+                    if title:
+                        ax_t.text(0.5,0.97,title,transform=ax_t.transAxes,fontsize=14,fontweight='bold',
+                                  ha='center',va='top',color='#0d1b2a')
+                        ax_t.plot([0.05,0.95],[0.955,0.955],transform=ax_t.transAxes,color='#E8641A',lw=2)
+                    y_pos=0.93 if title else 0.97
+                    for line in lines:
+                        if y_pos<0.03: break
+                        if line.startswith("##"):
+                            ax_t.text(0.05,y_pos,line[2:].strip(),transform=ax_t.transAxes,fontsize=12,
+                                      fontweight='bold',color='#1a3a5c',va='top')
+                            y_pos-=0.028
+                        elif line.startswith("$") and line.endswith("$"):
+                            ax_t.text(0.08,y_pos,line[1:-1],transform=ax_t.transAxes,fontsize=10,
+                                      va='top',math_fontfamily='cm')
+                            y_pos-=0.025
+                        elif line=="---":
+                            ax_t.plot([0.05,0.95],[y_pos,y_pos],transform=ax_t.transAxes,color='#ccc',lw=0.8)
+                            y_pos-=0.012
+                        else:
+                            ax_t.text(0.05,y_pos,line,transform=ax_t.transAxes,fontsize=fontsize,va='top',
+                                      color='#222',family='serif')
+                            y_pos-=0.022
+                    fig_t.subplots_adjust(left=0.05,right=0.95,top=0.98,bottom=0.02)
+                    pdf.savefig(fig_t,bbox_inches="tight"); plt.close(fig_t)
+
                 buf=BytesIO()
                 with PdfPages(buf) as pdf:
-                    pdf.savefig(fig1,bbox_inches="tight"); pdf.savefig(fig_r,bbox_inches="tight")
+                    # Pagina 1: Schița structurii
+                    pdf.savefig(fig1,bbox_inches="tight")
+                    # Pagina 2: Schița cu reacțiuni
+                    pdf.savefig(fig_reac,bbox_inches="tight")
+
+                    # Pagina 3: Date de intrare + Ecuații de echilibru
+                    p3_lines=[]
+                    p3_lines.append("## 1. Date de intrare")
+                    p3_lines.append(f"Lungime grindă: L = {L:.2f} m,  Înclinare: θ = {theta_deg:.0f}°")
+                    p3_lines.append(f"Secțiune: b×h = {b_cm:.1f}×{h_cm:.1f} cm,  A = {A_sec*1e4:.1f} cm²,  I = {I_sec:.4e} m⁴")
+                    p3_lines.append(f"Material: {mat},  E = {E:.2e} kN/m²")
+                    p3_lines.append(f"EI = {E*I_sec:.3e} kNm²,  EA = {E*A_sec:.3e} kN")
+                    p3_lines.append("---")
+                    # Reazeme
+                    p3_lines.append("## 2. Reazeme")
+                    for idx_s,s in enumerate(st.session_state.gv_sup):
+                        lbl_s=node_labels[idx_s] if idx_s<len(node_labels) else str(idx_s)
+                        tip_name={0:"Liber",1:"Articulație (pin)",2:"Reazem simplu (roller)",3:"Încastrare (fixed)"}
+                        p3_lines.append(f"  {lbl_s}: {tip_name[s['tip']]} la x = {s['x']:.2f} m")
+                    p3_lines.append(f"Reacțiuni totale: r = {total_r},  Ecuații: 3,  ns = {G_val}")
+                    p3_lines.append("---")
+                    # Încărcări
+                    p3_lines.append("## 3. Încărcări aplicate")
+                    if q_abs>0:
+                        p3_lines.append(f"  q = {q_abs:.2f} kN/m  ({'↓' if q_down else '↑'})  de la x={q_start:.2f} m la x={q_end:.2f} m")
+                        Rq_val=q_abs*(q_end-q_start)
+                        xRq_val=(q_start+q_end)/2
+                        p3_lines.append(f"  Rezultantă: R_q = q·(x₂−x₁) = {q_abs:.2f}·{q_end-q_start:.2f} = {Rq_val:.2f} kN")
+                        p3_lines.append(f"  Punct de aplicare: x_R = (x₁+x₂)/2 = {xRq_val:.2f} m")
+                    for idx_f,f in enumerate(st.session_state.gv_forces):
+                        if f["tip"]=="F":
+                            fx_pdf,fy_pdf=_force_xy(f)
+                            p3_lines.append(f"  Forța {idx_f+1}: Fx = {fx_pdf:.2f} kN, Fy = {fy_pdf:.2f} kN la x = {f.get('dist',0):.2f} m")
+                        else:
+                            p3_lines.append(f"  Moment {idx_f+1}: M = {f.get('val',0):.2f} kNm la x = {f.get('dist',0):.2f} m")
+                    _pdf_text_page(pdf, p3_lines, title="BeamFlow — Calcul Detaliat")
+
+                    # Pagina 4: Ecuații de echilibru și reacțiuni
+                    p4_lines=[]
+                    p4_lines.append("## 4. Ecuații de echilibru — Determinarea reacțiunilor")
+                    p4_lines.append("")
+                    # Collect reaction info
+                    reac_info=[]
+                    for idx_s,s in enumerate(st.session_state.gv_sup):
+                        ni_s=nidx(s["x"]); base_s=3*ni_s
+                        lbl_s=node_labels[idx_s] if idx_s<len(node_labels) else str(idx_s)
+                        H_r=R_g[base_s] if s["tip"] in [1,3] else 0.0
+                        V_r=R_g[base_s+1] if s["tip"] in [1,2,3] else 0.0
+                        M_r=R_g[base_s+2] if s["tip"]==3 else 0.0
+                        reac_info.append({"lbl":lbl_s,"x":s["x"],"tip":s["tip"],"H":H_r,"V":V_r,"M":M_r})
+
+                    # ΣFx = 0
+                    p4_lines.append("## ΣFx = 0:")
+                    sfx_parts=[]
+                    for r_i in reac_info:
+                        if r_i["tip"] in [1,3] and abs(r_i["H"])>1e-6:
+                            sfx_parts.append(f"H{r_i['lbl']}({r_i['H']:+.4f})")
+                    for f in st.session_state.gv_forces:
+                        if f["tip"]=="F":
+                            fx_p,_=_force_xy(f)
+                            if abs(fx_p)>1e-6: sfx_parts.append(f"Fx({fx_p:+.4f})")
+                    p4_lines.append("  " + " + ".join(sfx_parts) + " = 0" if sfx_parts else "  (fără componente orizontale)")
+
+                    # ΣFy = 0
+                    p4_lines.append("")
+                    p4_lines.append("## ΣFy = 0:")
+                    sfy_parts=[]
+                    for r_i in reac_info:
+                        if r_i["tip"] in [1,2,3] and abs(r_i["V"])>1e-6:
+                            sfy_parts.append(f"V{r_i['lbl']}({r_i['V']:+.4f})")
+                    for f in st.session_state.gv_forces:
+                        if f["tip"]=="F":
+                            _,fy_p=_force_xy(f)
+                            if abs(fy_p)>1e-6: sfy_parts.append(f"Fy({fy_p:+.4f})")
+                    if q_abs>0:
+                        Rq_fy=(-q_eff)*(q_end-q_start)*c_ang
+                        sfy_parts.append(f"R_q·cos(θ)({Rq_fy:+.4f})")
+                    p4_lines.append("  " + " + ".join(sfy_parts) + " = 0" if sfy_parts else "  (fără componente verticale)")
+
+                    # ΣM around first support
+                    p4_lines.append("")
+                    first_sup=reac_info[0] if reac_info else None
+                    if first_sup:
+                        p4_lines.append(f"## ΣM{first_sup['lbl']} = 0  (momente față de {first_sup['lbl']} la x={first_sup['x']:.2f} m):")
+                        sm_parts=[]
+                        for r_i in reac_info:
+                            brat=r_i["x"]-first_sup["x"]
+                            if abs(brat)>1e-6 and abs(r_i["V"])>1e-6:
+                                mom_v=r_i["V"]*brat
+                                sm_parts.append(f"  V{r_i['lbl']}·{abs(brat):.2f} = {r_i['V']:.4f}·{abs(brat):.2f} = {mom_v:+.4f} kNm")
+                            if abs(r_i["M"])>1e-6:
+                                sm_parts.append(f"  M{r_i['lbl']} = {r_i['M']:+.4f} kNm")
+                        for f in st.session_state.gv_forces:
+                            d_f=f.get("dist",0); brat_f=d_f-first_sup["x"]
+                            if f["tip"]=="F":
+                                _,fy_p=_force_xy(f)
+                                if abs(fy_p)>1e-6 and abs(brat_f)>1e-6:
+                                    sm_parts.append(f"  Fy·{abs(brat_f):.2f} = {fy_p:.4f}·{abs(brat_f):.2f} = {fy_p*brat_f:+.4f} kNm")
+                            else:
+                                sm_parts.append(f"  M_ext = {f.get('val',0):+.4f} kNm")
+                        if q_abs>0:
+                            xRq_m=(q_start+q_end)/2
+                            brat_q=xRq_m-first_sup["x"]
+                            Rq_tot=(-q_eff)*(q_end-q_start)
+                            sm_parts.append(f"  R_q·brațul = {Rq_tot:.4f}·{abs(brat_q):.2f} = {Rq_tot*brat_q:+.4f} kNm")
+                        for sp in sm_parts: p4_lines.append(sp)
+
+                    p4_lines.append("---")
+                    p4_lines.append("## Valorile reacțiunilor:")
+                    for r_i in reac_info:
+                        parts=[]
+                        if r_i["tip"] in [1,3]: parts.append(f"H{r_i['lbl']} = {r_i['H']:.4f} kN")
+                        if r_i["tip"] in [1,2,3]: parts.append(f"V{r_i['lbl']} = {r_i['V']:.4f} kN")
+                        if r_i["tip"]==3: parts.append(f"M{r_i['lbl']} = {r_i['M']:.4f} kNm")
+                        p4_lines.append(f"  {r_i['lbl']}: " + ",  ".join(parts))
+                    p4_lines.append("")
+                    p4_lines.append(f"Verificare: ΣFx = {Fx_sum:.6f} ≈ 0  {'✓' if abs(Fx_sum)<0.05 else '✗'}")
+                    p4_lines.append(f"Verificare: ΣFy = {Fy_sum:.6f} ≈ 0  {'✓' if abs(Fy_sum)<0.05 else '✗'}")
+                    _pdf_text_page(pdf, p4_lines, title="Ecuații de echilibru")
+
+                    # Pagina 5: Eforturi secționale pas cu pas
+                    p5_lines=[]
+                    p5_lines.append("## 5. Eforturi secționale — Calcul pe fiecare element")
+                    p5_lines.append("")
+                    p5_lines.append("Convenție semne: N > 0 = întindere, T tăietor, M > 0 = fibre inferioare întinse")
+                    p5_lines.append("---")
+                    for i_e in range(ne):
+                        Le_e=nodes_s[i_e+1]-nodes_s[i_e]
+                        if Le_e<1e-9: continue
+                        x_st=nodes_s[i_e]; x_en=nodes_s[i_e+1]
+                        EI12_e=12*E*I_sec/Le_e**3; EI6_e=6*E*I_sec/Le_e**2
+                        EI4_e=4*E*I_sec/Le_e; EI2_e=2*E*I_sec/Le_e; EA_e=E*A_sec/Le_e
+                        k_l_e=np.array([[EA_e,0,0,-EA_e,0,0],[0,EI12_e,EI6_e,0,-EI12_e,EI6_e],[0,EI6_e,EI4_e,0,-EI6_e,EI2_e],
+                                        [-EA_e,0,0,EA_e,0,0],[0,-EI12_e,-EI6_e,0,EI12_e,-EI6_e],[0,EI6_e,EI2_e,0,-EI6_e,EI4_e]])
+                        ue_e=np.concatenate([U_loc[3*i_e:3*i_e+3],U_loc[3*(i_e+1):3*(i_e+1)+3]])
+                        mid_e=(nodes_s[i_e]+nodes_s[i_e+1])/2
+                        hq_e=q_abs>0 and (q_start-1e-6<=mid_e<=q_end+1e-6)
+                        qyl_e=-q_eff if hq_e else 0
+                        fel_e=np.array([0,qyl_e*Le_e/2,qyl_e*Le_e**2/12,0,qyl_e*Le_e/2,-qyl_e*Le_e**2/12]) if hq_e else np.zeros(6)
+                        fe2_e=k_l_e@ue_e-fel_e
+                        N_st=-fe2_e[0]; V_st=fe2_e[1]; M_st=-fe2_e[2]
+                        N_en=fe2_e[3]; V_en=-fe2_e[4]; M_en=fe2_e[5]
+
+                        p5_lines.append(f"## Secțiunea {i_e+1}: x ∈ [{x_st:.2f}, {x_en:.2f}] m  (Le = {Le_e:.2f} m)")
+                        if hq_e:
+                            p5_lines.append(f"  q activ pe acest element: q_local = {abs(qyl_e):.2f} kN/m")
+                        # T stânga / T dreapta
+                        p5_lines.append(f"  T_stânga = {V_st:.4f} kN")
+                        if hq_e:
+                            V_end_calc=V_st+qyl_e*Le_e
+                            p5_lines.append(f"  T_dreapta = T_st + q·Le = {V_st:.4f} + ({qyl_e:.2f})·{Le_e:.2f} = {V_end_calc:.4f} kN")
+                        else:
+                            p5_lines.append(f"  T_dreapta = {V_st:.4f} kN (constant, fără q)")
+                        # M stânga / M dreapta
+                        p5_lines.append(f"  M_stânga = {M_st:.4f} kNm")
+                        if hq_e:
+                            M_end_calc=M_st+V_st*Le_e+qyl_e*Le_e**2/2
+                            p5_lines.append(f"  M_dreapta = M_st + T_st·Le + q·Le²/2")
+                            p5_lines.append(f"            = {M_st:.4f} + {V_st:.4f}·{Le_e:.2f} + ({qyl_e:.2f})·{Le_e:.2f}²/2")
+                            p5_lines.append(f"            = {M_end_calc:.4f} kNm")
+                        else:
+                            M_end_calc=M_st+V_st*Le_e
+                            p5_lines.append(f"  M_dreapta = M_st + T_st·Le = {M_st:.4f} + {V_st:.4f}·{Le_e:.2f} = {M_end_calc:.4f} kNm")
+                        p5_lines.append(f"  N = {N_st:.4f} kN")
+                        # Check where T=0 in this element
+                        if hq_e and abs(qyl_e)>1e-9 and V_st*((V_st+qyl_e*Le_e))<0:
+                            x0_e=-V_st/qyl_e
+                            M_max_e=M_st+V_st*x0_e+qyl_e*x0_e**2/2
+                            p5_lines.append(f"  *** T = 0 la x₀ = {x_st+x0_e:.4f} m (local: {x0_e:.4f} m)")
+                            p5_lines.append(f"      M_max = {M_st:.4f} + {V_st:.4f}·{x0_e:.4f} + ({qyl_e:.2f})·{x0_e:.4f}²/2 = {M_max_e:.4f} kNm")
+                        p5_lines.append("")
+                    _pdf_text_page(pdf, p5_lines, title="Eforturi secționale — pas cu pas")
+
+                    # Pagina 6: Diagrame N, T, M
+                    pdf.savefig(fig_r,bbox_inches="tight")
+
+                    # Pagina 7: Formulele Mmax
+                    if len(sign_ch)>0:
+                        p7_lines=[]
+                        p7_lines.append("## 6. Momentul maxim (unde T = 0)")
+                        p7_lines.append("")
+                        for sc in sign_ch:
+                            dV_sc=Va[sc+1]-Va[sc]
+                            if abs(dV_sc)<1e-9: continue
+                            x0_sc=xa[sc]-Va[sc]*(xa[sc+1]-xa[sc])/dV_sc
+                            m0_sc=float(np.interp(x0_sc,xa,Ma))
+                            p7_lines.append(f"T se anulează la x₀ = {x0_sc:.4f} m")
+                            p7_lines.append(f"M_max = M(x₀) = {m0_sc:.4f} kNm")
+                            p7_lines.append("")
+                        p7_lines.append("---")
+                        p7_lines.append(f"Săgeată maximă: {np.max(np.abs(U_loc[1::3]))*1000:.4f} mm")
+                        _pdf_text_page(pdf, p7_lines, title="Moment maxim și verificări")
+
                 st.download_button("📥 Descarcă PDF",buf.getvalue(),"Grinzi2D.pdf","application/pdf",key="gv_dl")
                 plt.close(fig_r)
             except np.linalg.LinAlgError:
