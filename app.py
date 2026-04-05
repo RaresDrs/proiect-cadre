@@ -497,9 +497,9 @@ if modul == "🔧 Calcul 2D Grinzi":
                                  ha="center",va="center",
                                  bbox=dict(fc="white",alpha=0.92,ec="#1a6e1a",lw=0.8,
                                            boxstyle="round,pad=0.35"))
-                    # Cotare x_R — jos (sub L total)
+                    # Cotare x — jos (sub L total)
                     _draw_dim_line(ax_reac,0,0,Rg_x,Rg_y,
-                                   f"x_R = {x_R:.2f} m",
+                                   f"x = {x_R:.2f} m",
                                    _dim_drop*0.9,_tick_h,color="#1a6e1a",above=False)
 
                 # ── Săgeți reacțiuni ──
@@ -582,12 +582,18 @@ if modul == "🔧 Calcul 2D Grinzi":
                 # --- DIAGRAME N, T, M ---
                 fig_r,(aN,aV,aM)=plt.subplots(3,1,figsize=(13,11),sharex=True,dpi=180)
                 fill_diagram(aN,xa,Na,"#1a6faf","N (kN)"); aN.set_title("N(x) — Efort axial",fontweight="bold",color="#1a6faf"); label_extremes(aN,xa,Na,"#1a6faf")
+                if np.max(Na)>0.01: aN.text(xa[np.argmax(Na)],Na[np.argmax(Na)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#1a6faf",alpha=0.75)
+                if np.min(Na)<-0.01: aN.text(xa[np.argmin(Na)],Na[np.argmin(Na)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#1a6faf",alpha=0.75)
                 fill_diagram(aV,xa,Va,"#2ca02c","T (kN)"); aV.set_title("T(x) — Forță tăietoare",fontweight="bold",color="#2ca02c"); label_extremes(aV,xa,Va,"#2ca02c")
+                if np.max(Va)>0.01: aV.text(xa[np.argmax(Va)],Va[np.argmax(Va)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#2ca02c",alpha=0.75)
+                if np.min(Va)<-0.01: aV.text(xa[np.argmin(Va)],Va[np.argmin(Va)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#2ca02c",alpha=0.75)
                 # M diagram: convenție română + jos (fibra întinsă jos)
                 aM.fill_between(xa,-Ma,0,color="#d62728",alpha=0.32); aM.plot(xa,-Ma,color="#d62728",lw=2.2)
                 aM.axhline(0,color='black',lw=1.2); aM.set_ylabel("M (kNm)",color="#d62728",fontweight='bold',fontsize=10)
                 aM.grid(True,alpha=0.18,linestyle='--'); aM.spines['top'].set_visible(False); aM.spines['right'].set_visible(False)
-                aM.set_title("M(x) — Moment încovoietor  [+ jos · − sus]",fontweight="bold",color="#d62728")
+                aM.set_title("M(x) — Moment încovoietor",fontweight="bold",color="#d62728")
+                if np.max(Ma)>0.01: aM.text(xa[np.argmax(Ma)],-Ma[np.argmax(Ma)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#d62728",alpha=0.75)
+                if np.min(Ma)<-0.01: aM.text(xa[np.argmin(Ma)],-Ma[np.argmin(Ma)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#d62728",alpha=0.75)
                 _shown=set()
                 for _i in [int(np.argmax(Ma)),int(np.argmin(Ma)),0,len(Ma)-1]:
                     _v=Ma[_i]
@@ -938,8 +944,14 @@ elif modul == "📏 Statica 1 — Static Determinate":
             ax_fbd.annotate("",xy=(0,0),xytext=(0,-scr if VAs>0 else scr),arrowprops=dict(arrowstyle="->",color="red",lw=2.5,mutation_scale=16))
             ax_fbd.text(-sf*3.5,-scr*0.55 if VAs>0 else scr*0.55,f"VA={VAs:.3f}kN",color="red",fontsize=9,fontweight="bold")
         if abs(VBs)>0.001 and "Articulație" in tipg:
-            ax_fbd.annotate("",xy=(Ls,0),xytext=(Ls,-scr if VBs>0 else scr),arrowprops=dict(arrowstyle="->",color="red",lw=2.5,mutation_scale=16))
-            ax_fbd.text(Ls+sf*0.5,-scr*0.55 if VBs>0 else scr*0.55,f"VB={VBs:.3f}kN",color="red",fontsize=9,fontweight="bold")
+            roller_bot=-sf*2.9  # linia de jos a simbolului reazem simplu
+            if VBs>0:
+                ax_fbd.annotate("",xy=(Ls,roller_bot),xytext=(Ls,roller_bot-scr),
+                                arrowprops=dict(arrowstyle="->",color="red",lw=2.5,mutation_scale=16),zorder=8)
+                ax_fbd.text(Ls+sf*0.5,roller_bot-scr*0.5,f"VB={VBs:.3f}kN",color="red",fontsize=9,fontweight="bold")
+            else:
+                ax_fbd.annotate("",xy=(Ls,0),xytext=(Ls,scr),arrowprops=dict(arrowstyle="->",color="red",lw=2.5,mutation_scale=16))
+                ax_fbd.text(Ls+sf*0.5,scr*0.55,f"VB={VBs:.3f}kN",color="red",fontsize=9,fontweight="bold")
         if abs(MAs)>0.001: draw_moment_arc(ax_fbd,0,0,-MAs,r=sf*2.2,color="purple"); ax_fbd.text(-sf*5.5,sf*3,f"MA={MAs:.3f}kNm",color="purple",fontsize=9)
         if qs>0 and qx2>qx1: draw_distributed_load(ax_fbd,qx1,qx2,0.0,qs,f"q={qs}")
         if abs(Ps)>0: draw_force_arrow(ax_fbd,as_,0,0,1 if Ps>0 else -1,f"P={abs(Ps)}kN","darkred",scale=scr)
@@ -973,8 +985,14 @@ elif modul == "📏 Statica 1 — Static Determinate":
         st.markdown("### Pasul 4 — Diagrame N, T, M")
         fig_ntm,(axN,axT,axM)=plt.subplots(3,1,figsize=(12,11),dpi=150,sharex=True)
         fill_diagram(axN,x_arr,N_arr,"#1a6faf","N(kN)"); axN.set_title("N(x)",fontweight="bold",color="#1a6faf"); label_extremes(axN,x_arr,N_arr,"#1a6faf")
+        if np.max(N_arr)>0.01: axN.text(x_arr[np.argmax(N_arr)],N_arr[np.argmax(N_arr)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#1a6faf",alpha=0.75)
+        if np.min(N_arr)<-0.01: axN.text(x_arr[np.argmin(N_arr)],N_arr[np.argmin(N_arr)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#1a6faf",alpha=0.75)
         fill_diagram(axT,x_arr,T_arr,"#2ca02c","T(kN)"); axT.set_title("T(x)",fontweight="bold",color="#2ca02c"); label_extremes(axT,x_arr,T_arr,"#2ca02c")
-        fill_diagram(axM,x_arr,M_arr,"#d62728","M(kNm)"); axM.set_title("M(x) [fibra ïntinsă]",fontweight="bold",color="#d62728"); axM.invert_yaxis(); label_extremes(axM,x_arr,M_arr,"#d62728")
+        if np.max(T_arr)>0.01: axT.text(x_arr[np.argmax(T_arr)],T_arr[np.argmax(T_arr)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#2ca02c",alpha=0.75)
+        if np.min(T_arr)<-0.01: axT.text(x_arr[np.argmin(T_arr)],T_arr[np.argmin(T_arr)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#2ca02c",alpha=0.75)
+        fill_diagram(axM,x_arr,M_arr,"#d62728","M(kNm)"); axM.set_title("M(x)",fontweight="bold",color="#d62728"); axM.invert_yaxis(); label_extremes(axM,x_arr,M_arr,"#d62728")
+        if np.max(M_arr)>0.01: axM.text(x_arr[np.argmax(M_arr)],M_arr[np.argmax(M_arr)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#d62728",alpha=0.75)
+        if np.min(M_arr)<-0.01: axM.text(x_arr[np.argmin(M_arr)],M_arr[np.argmin(M_arr)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#d62728",alpha=0.75)
         axM.set_xlabel("x(m)",fontsize=11); plt.tight_layout(); fig_ntm.suptitle("Diagrame N,T,M — Grindă Simplă",fontsize=14,fontweight="bold",y=1.01)
         st.pyplot(fig_ntm); plt.close(fig_ntm)
 
