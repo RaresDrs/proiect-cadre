@@ -50,10 +50,15 @@ def draw_roller(ax,x,y,size=0.25,color='k'):
     ax.add_patch(plt.Circle((x,y-size*1.5-size*0.7),size*0.65,fc='white',ec=color,lw=1.8,zorder=5))
     ax.plot([x-size*1.6,x+size*1.6],[y-size*1.5-size*1.4,y-size*1.5-size*1.4],color=color,lw=1.5,zorder=5)
 
-def draw_fixed_bottom(ax,x,y,size=0.35,color='k'):
-    ax.plot([x-size*1.6,x+size*1.6],[y,y],color=color,lw=3,zorder=5)
-    for xx in np.linspace(x-size*1.3,x+size*1.3,9):
-        ax.plot([xx,xx-size*0.4],[y,y-size*0.55],color=color,lw=1,zorder=4)
+def draw_fixed_bottom(ax,x,y,c_ang=1.0,s_ang=0.0,size=0.35,color='k'):
+    # Wall line perpendicular to bar direction
+    px,py=-s_ang,c_ang  # perpendicular to bar (rotated 90° CCW)
+    ax.plot([x+px*size*1.6,x-px*size*1.6],[y+py*size*1.6,y-py*size*1.6],color=color,lw=3,zorder=5)
+    # Hatching going "into wall" (opposite bar direction)
+    hx,hy=-c_ang,-s_ang
+    for t in np.linspace(-1.3,1.3,9):
+        bx=x+px*size*t; by=y+py*size*t
+        ax.plot([bx,bx+hx*size*0.55],[by,by+hy*size*0.55],color=color,lw=1,zorder=4)
 
 def draw_fixed_left(ax,x,y_bot,height,size=0.3,color='k'):
     ax.plot([x,x],[y_bot,y_bot+height],color=color,lw=3.5,zorder=5)
@@ -66,14 +71,18 @@ def draw_axes(ax,ox,oy,length=0.8,color='gray',fontsize=8):
     ax.annotate('',xy=(ox,oy+length),xytext=(ox,oy),arrowprops=dict(arrowstyle='->',color=color,lw=1.2))
     ax.text(ox,oy+length+0.06,'y',color=color,fontsize=fontsize,ha='center')
 
-def draw_force_arrow(ax,x,y,fx,fy,label,color='red',scale=0.8):
+def draw_force_arrow(ax,x,y,fx,fy,label,color='red',scale=0.8,lw=1.8):
     mag=np.sqrt(fx**2+fy**2)
     if mag<1e-10: return
     ux,uy=fx/mag,fy/mag
     ax.annotate('',xy=(x,y),xytext=(x-ux*scale,y-uy*scale),
-                arrowprops=dict(arrowstyle='->',color=color,lw=2.2,mutation_scale=14))
-    ax.text(x-ux*scale*1.15,y-uy*scale*1.15,label,color=color,fontsize=8.5,fontweight='bold',
-            ha='center',va='center',bbox=dict(fc='white',alpha=0.6,ec='none',pad=1))
+                arrowprops=dict(arrowstyle='->',color=color,lw=lw,mutation_scale=12))
+    # Label: behind tail + perpendicular nudge
+    perp_x,perp_y=-uy,ux
+    lx=x-ux*scale*1.45+perp_x*scale*0.35
+    ly=y-uy*scale*1.45+perp_y*scale*0.35
+    ax.text(lx,ly,label,color=color,fontsize=7.5,fontweight='bold',
+            ha='center',va='center',bbox=dict(fc='white',alpha=0.88,ec=color,lw=0.5,pad=1.2,boxstyle='round,pad=0.2'))
 
 def draw_distributed_load(ax,x1,x2,y,q,label='q',color='#2255cc',n_arrows=8):
     if x2<=x1: return
@@ -110,14 +119,17 @@ def draw_distributed_load_perp(ax, q_start_s, q_end_s, c_ang, s_ang, q_mag, q_do
             f"q={q_mag:.1f}kN/m",color=color,fontsize=9,fontweight='bold',ha='center',va='center',
             bbox=dict(fc='white',alpha=0.7,ec='none',pad=1))
 
-def draw_moment_arc(ax,x,y,M,r=0.25,color='purple'):
+def draw_moment_arc(ax,x,y,M,r=0.25,color='purple',fiber_label=None):
     if abs(M)<1e-9: return
     t1,t2=(30,330) if M>0 else (210,510)
-    ax.add_patch(Arc((x,y),r*2,r*2,angle=0,theta1=t1,theta2=t2,color=color,lw=2))
+    ax.add_patch(Arc((x,y),r*2,r*2,angle=0,theta1=t1,theta2=t2,color=color,lw=1.4,zorder=6))
     ang=np.radians(t2 if M>0 else t1); eps=0.01*(-1 if M>0 else 1)
     ax.annotate('',xy=(x+r*np.cos(ang),y+r*np.sin(ang)),
                 xytext=(x+r*np.cos(ang-eps),y+r*np.sin(ang-eps)),
-                arrowprops=dict(arrowstyle='->',color=color,lw=1.5))
+                arrowprops=dict(arrowstyle='->',color=color,lw=1.2,mutation_scale=10),zorder=6)
+    if fiber_label:
+        ax.text(x+r*1.9,y-r*1.1,fiber_label,fontsize=7,color=color,ha='center',va='top',
+                bbox=dict(fc='white',alpha=0.85,ec=color,lw=0.5,pad=1.2,boxstyle='round,pad=0.2'))
 
 def fill_diagram(ax,x,y,color,label,alpha=0.32):
     ax.fill_between(x,y,0,color=color,alpha=alpha); ax.plot(x,y,color=color,lw=2.2)
@@ -251,23 +263,46 @@ if modul == "🔧 Calcul 2D Grinzi":
 
     # --- SCHIȚĂ ---
     ss=max(0.18,L*0.03)
-    fig1,ax1=plt.subplots(figsize=(12,max(3.5,end_y+3.0)),dpi=150)
-    ax1.plot([0,end_x],[0,end_y],"k-",lw=6,zorder=3,solid_capstyle="round")
-    ax1.text(end_x/2+s_ang*0.3,end_y/2-c_ang*0.3+0.3,f"L={L:.1f} m",ha="center",fontsize=11,fontweight="bold",color="#1a3a5c")
-    # Draw supports
+    _dim_drop=max(0.9,L*0.15)   # how far below beam the dimension line sits
+    _tick_h=_dim_drop*0.18      # short tick height at dim-line ends
+
+    def _draw_dim_line(ax,x1_g,y1_g,x2_g,y2_g,label,drop,tick_h,color="#555",above=True):
+        """Dimension line parallel to beam. above=True → above bar, above=False → below bar."""
+        nx,ny=(-s_ang,c_ang) if above else (s_ang,-c_ang)
+        ax.plot([x1_g,x1_g+nx*drop],[y1_g,y1_g+ny*drop],color=color,lw=0.7,ls=":",zorder=2)
+        ax.plot([x2_g,x2_g+nx*drop],[y2_g,y2_g+ny*drop],color=color,lw=0.7,ls=":",zorder=2)
+        ox1=x1_g+nx*drop; oy1=y1_g+ny*drop
+        ox2=x2_g+nx*drop; oy2=y2_g+ny*drop
+        ax.annotate("",xy=(ox1,oy1),xytext=(ox2,oy2),
+                    arrowprops=dict(arrowstyle="<->",color=color,lw=1.0,mutation_scale=10),zorder=3)
+        mx=(ox1+ox2)/2+nx*tick_h*1.4; my=(oy1+oy2)/2+ny*tick_h*1.4
+        ax.text(mx,my,label,fontsize=8,ha="center",va="center",color=color,fontweight="bold",
+                bbox=dict(fc="white",alpha=0.88,ec="none",pad=1.2))
+
+    fig1,ax1=plt.subplots(figsize=(12,max(4.5,end_y+_dim_drop*2+2.5)),dpi=150)
+
+    # Beam
+    ax1.plot([0,end_x],[0,end_y],"k-",lw=7,zorder=3,solid_capstyle="round",
+             path_effects=None)
+
+    # Draw supports + node labels
     node_labels=["A","B","C","D","E","F"]
+    sup_xs=sorted(st.session_state.gv_sup,key=lambda s:s["x"])
     for idx,s in enumerate(st.session_state.gv_sup):
         sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
         lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
-        ax1.text(sx_g-s_ang*ss*2,sy_g+c_ang*ss*2,lbl,fontsize=10,fontweight="bold",color="#1a3a5c",ha="center")
+        # label above / to the side of beam
+        ax1.text(sx_g-s_ang*ss*1.6,sy_g+c_ang*ss*1.6+0.12,lbl,
+                 fontsize=10,fontweight="bold",color="#1a3a5c",ha="center",va="bottom",
+                 bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.25"))
         if s["tip"]==1: draw_pin(ax1,sx_g,sy_g,ss)
         elif s["tip"]==2: draw_roller(ax1,sx_g,sy_g,ss)
-        elif s["tip"]==3: draw_fixed_bottom(ax1,sx_g,sy_g,ss)
-        if s["x"]>0 and s["x"]<L:
-            ax1.text(sx_g,sy_g-ss*2.8,f"x={s['x']:.1f}m",fontsize=7.5,ha="center",color="gray")
+        elif s["tip"]==3: draw_fixed_bottom(ax1,sx_g,sy_g,c_ang,s_ang,ss)
+
     # Draw q perpendicular to bar
     if q_abs>0 and q_end>q_start:
         draw_distributed_load_perp(ax1,q_start,q_end,c_ang,s_ang,q_abs,q_down)
+
     # Draw forces
     arsc=max(0.55,L*0.1)
     for f in st.session_state.gv_forces:
@@ -281,15 +316,39 @@ if modul == "🔧 Calcul 2D Grinzi":
                          f"Fx={fx_g:.1f}\nFy={fy_g:.1f}",fontsize=7,color="#900",
                          ha="left",va="center",bbox=dict(fc="white",alpha=0.7,ec="none",pad=1))
         else:
-            draw_moment_arc(ax1,fp,fyp,f.get("val",0),r=ss*1.8,color="purple")
-            ax1.text(fp+ss*2.5,fyp,f"M={f.get('val',0):.0f}kNm",fontsize=8,color="purple",fontweight="bold")
+            _Mv=f.get("val",0)
+            _fi_lbl="f.î. ↓" if _Mv>0 else "f.î. ↑"
+            draw_moment_arc(ax1,fp,fyp,_Mv,r=ss*1.05,color="purple",fiber_label=_fi_lbl)
+            ax1.text(fp+ss*2.2,fyp+ss*0.6,f"M={_Mv:.0f}kNm",fontsize=8,color="purple",fontweight="bold",
+                     bbox=dict(fc="white",alpha=0.88,ec="purple",lw=0.5,pad=1.2,boxstyle="round,pad=0.2"))
+
+    # ── COTARE (dimensioning lines) ──────────────────────────────
+    # Build sorted list of key x-positions (supports + ends)
+    key_xs=sorted(set([0.0,L]+[s["x"] for s in st.session_state.gv_sup]))
+
+    # 1) Overall L — jos față de bară
+    _draw_dim_line(ax1,0,0,end_x,end_y,f"L = {L:.2f} m",
+                   _dim_drop*1.3,_tick_h,above=False)
+
+    # 2) Segmente — sus față de bară
+    if len(key_xs)>2:
+        for i in range(len(key_xs)-1):
+            xa1=key_xs[i]*c_ang;   ya1=key_xs[i]*s_ang
+            xa2=key_xs[i+1]*c_ang; ya2=key_xs[i+1]*s_ang
+            seg_len=key_xs[i+1]-key_xs[i]
+            _draw_dim_line(ax1,xa1,ya1,xa2,ya2,f"{seg_len:.2f} m",
+                           _dim_drop*0.7,_tick_h,color="#4a6fa5",above=True)
+
+    # Axes system (bottom-left corner)
     draw_axes(ax1,min(0,end_x)-1.2,min(0,end_y)-0.3,length=0.7)
-    mg=max(L*0.2,1.5)
-    ax1.set_xlim(min(0,end_x)-mg,max(0,end_x)+mg)
-    ax1.set_ylim(min(0,end_y)-mg*1.2,max(0,end_y)+mg*1.5)
+
+    mg=max(L*0.22,1.5)
+    ax1.set_xlim(min(0,end_x)-mg, max(0,end_x)+mg)
+    ax1.set_ylim(min(0,end_y)-_dim_drop*1.8-mg*0.3, max(0,end_y)+_dim_drop*1.1+mg*0.5)
     ax1.set_aspect("equal"); ax1.axis("off")
     g_txt="static determinată" if G_val==0 else (f"nedeterminată ns={G_val}" if G_val>0 else "MECANISM")
-    ax1.set_title(f"Schiță Model Structural — {g_txt}  |  θ={theta_deg:.0f}°  L={L:.1f}m",fontsize=12,fontweight="bold")
+    ax1.set_title(f"θ = {theta_deg:.0f}°  |  L = {L:.1f} m",
+                  fontsize=11,fontweight="bold",pad=8)
     st.pyplot(fig1); plt.close(fig1)
 
     st.markdown("---")
@@ -374,45 +433,125 @@ if modul == "🔧 Calcul 2D Grinzi":
                 # --- REACTIUNI frumos ---
                 # --- SCHIȚĂ CU REACȚIUNI DESENATE ---
                 st.markdown("### Reacțiuni la Reazeme")
-                _max_R=max((abs(R_g[3*nidx(s["x"])+1]) for s in st.session_state.gv_sup if s["tip"] in [1,2,3]),default=1.0)
-                _max_R=max(_max_R,0.01); _rsc=max(0.5,L*0.09)/_max_R*_max_R  # arrow scale
-                _rsc_arr=max(0.5,L*0.10)  # fixed visual scale
-                fig_reac,ax_reac=plt.subplots(figsize=(12,max(3.5,end_y+3.0)),dpi=150)
-                ax_reac.plot([0,end_x],[0,end_y],"k-",lw=6,zorder=3,solid_capstyle="round")
-                # redraw supports and loads (same as preview)
+                _rsc_arr=max(0.5,L*0.10)
+                # Paleta mată pentru reacțiuni
+                _cV="#4060a8"   # albastru mat — reacțiuni verticale
+                _cH="#3a8060"   # verde-teal mat — reacțiuni orizontale
+                _cM="#7050a8"   # violet mat — momente reazeme
+
+                fig_reac,ax_reac=plt.subplots(figsize=(12,max(4.5,end_y+_dim_drop*2+3.0)),dpi=150)
+                ax_reac.plot([0,end_x],[0,end_y],"k-",lw=7,zorder=3,solid_capstyle="round")
+
+                # Reazeme + etichete noduri
                 for idx,s in enumerate(st.session_state.gv_sup):
-                    sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang; lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
+                    sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
+                    lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
+                    ax_reac.text(sx_g-s_ang*ss*1.6,sy_g+c_ang*ss*1.6+0.12,lbl,
+                                 fontsize=10,fontweight="bold",color="#1a3a5c",ha="center",va="bottom",
+                                 bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.22"))
                     if s["tip"]==1: draw_pin(ax_reac,sx_g,sy_g,ss)
                     elif s["tip"]==2: draw_roller(ax_reac,sx_g,sy_g,ss)
-                    elif s["tip"]==3: draw_fixed_bottom(ax_reac,sx_g,sy_g,ss)
+                    elif s["tip"]==3: draw_fixed_bottom(ax_reac,sx_g,sy_g,c_ang,s_ang,ss*0.75)
+
+                # Încărcări aplicate — q fără label (R va arăta valoarea)
                 if q_abs>0 and q_end>q_start:
-                    draw_distributed_load_perp(ax_reac,q_start,q_end,c_ang,s_ang,q_abs,q_down)
+                    _qpx=-s_ang if q_down else s_ang
+                    _qpy= c_ang if q_down else -c_ang
+                    _qlen=max(0.35,q_abs*0.03+0.25)
+                    _qs=np.linspace(q_start,q_end,9)
+                    for _s in _qs:
+                        _tx=_s*c_ang; _ty=_s*s_ang
+                        ax_reac.annotate("",xy=(_tx,_ty),xytext=(_tx+_qpx*_qlen,_ty+_qpy*_qlen),
+                                         arrowprops=dict(arrowstyle="-|>",color="#2255cc",lw=1.3,mutation_scale=10))
+                    _bx=[_s*c_ang+_qpx*_qlen for _s in _qs]
+                    _by=[_s*s_ang+_qpy*_qlen for _s in _qs]
+                    ax_reac.plot(_bx,_by,color="#2255cc",lw=2.0)
+
+                # Forțe concentrate utilizator
                 for f in st.session_state.gv_forces:
                     d=f.get("dist",0); fp=d*c_ang; fyp=d*s_ang
                     if f["tip"]=="F":
                         alpha_r=np.radians(f["alpha"]); P=f["P"]
-                        draw_force_arrow(ax_reac,fp,fyp,P*np.cos(alpha_r),P*np.sin(alpha_r),f"{P:.0f}kN",color="#c00",scale=_rsc_arr)
-                    else: draw_moment_arc(ax_reac,fp,fyp,f.get("val",0),r=ss*1.8,color="purple")
-                # Draw reaction arrows per support
+                        draw_force_arrow(ax_reac,fp,fyp,P*np.cos(alpha_r),P*np.sin(alpha_r),
+                                         f"{P:.0f}kN",color="#c00",scale=_rsc_arr)
+                    else:
+                        _Mv=f.get("val",0)
+                        draw_moment_arc(ax_reac,fp,fyp,_Mv,r=ss*1.05,color="purple",
+                                        fiber_label="f.î. ↓" if _Mv>0 else "f.î. ↑")
+
+                # ── Rezultantă q ──
+                if q_abs>0 and q_end>q_start:
+                    R_q=q_abs*(q_end-q_start)
+                    x_R=(q_start+q_end)/2
+                    Rg_x=x_R*c_ang; Rg_y=x_R*s_ang
+                    Rpx=-s_ang if q_down else s_ang
+                    Rpy= c_ang if q_down else -c_ang
+                    R_arrow_len=max(0.65,L*0.13)
+                    ax_reac.annotate("",xy=(Rg_x,Rg_y),
+                                     xytext=(Rg_x+Rpx*R_arrow_len,Rg_y+Rpy*R_arrow_len),
+                                     arrowprops=dict(arrowstyle="-|>",color="#1a6e1a",lw=2.5,
+                                                     mutation_scale=20))
+                    # Label deasupra cozii săgeții, ușor lateral
+                    ax_reac.text(Rg_x+Rpx*(R_arrow_len+0.18),Rg_y+Rpy*(R_arrow_len+0.18),
+                                 f"R = {R_q:.2f} kN",fontsize=9.5,color="#1a6e1a",fontweight="bold",
+                                 ha="center",va="center",
+                                 bbox=dict(fc="white",alpha=0.92,ec="#1a6e1a",lw=0.8,
+                                           boxstyle="round,pad=0.35"))
+                    # Cotare x_R — jos (sub L total)
+                    _draw_dim_line(ax_reac,0,0,Rg_x,Rg_y,
+                                   f"x_R = {x_R:.2f} m",
+                                   _dim_drop*0.9,_tick_h,color="#1a6e1a",above=False)
+
+                # ── Săgeți reacțiuni ──
                 for idx,s in enumerate(st.session_state.gv_sup):
-                    ni=nidx(s["x"]); base=3*ni; lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
+                    ni=nidx(s["x"]); base=3*ni
+                    lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
                     sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
-                    HA_v=R_g[base] if s["tip"] in [1,3] else 0.0
+                    HA_v=R_g[base]   if s["tip"] in [1,3] else 0.0
                     VA_v=R_g[base+1] if s["tip"] in [1,2,3] else 0.0
                     MA_v=R_g[base+2] if s["tip"]==3 else 0.0
-                    if abs(HA_v)>1e-4:
-                        draw_force_arrow(ax_reac,sx_g,sy_g,HA_v,0,f"H{lbl}={HA_v:.2f}kN",color="#e67e00",scale=_rsc_arr)
+
+                    # VA: ancorată mai jos (sub simbol reazem) — perpendicular pe bară în jos
+                    v_off_x=s_ang*ss*2.2; v_off_y=-c_ang*ss*2.2
                     if abs(VA_v)>1e-4:
-                        draw_force_arrow(ax_reac,sx_g,sy_g,0,VA_v,f"V{lbl}={VA_v:.2f}kN",color="#e67e00",scale=_rsc_arr)
+                        draw_force_arrow(ax_reac,sx_g+v_off_x,sy_g+v_off_y,
+                                         0,VA_v,f"V{lbl}={VA_v:.2f}kN",
+                                         color=_cV,scale=_rsc_arr)
+
+                    # HA: decalat lateral față de axul barei (±perp)
+                    # semn HA determină stânga/dreapta — offsetăm și perpendicular
+                    h_side=1.0 if s["x"]<=L/2 else -1.0  # stânga→sus-perp, dreapta→jos-perp
+                    h_off_x=-s_ang*ss*1.5*h_side; h_off_y=c_ang*ss*1.5*h_side
+                    if abs(HA_v)>1e-4:
+                        draw_force_arrow(ax_reac,sx_g+h_off_x,sy_g+h_off_y,
+                                         HA_v,0,f"H{lbl}={HA_v:.2f}kN",
+                                         color=_cH,scale=_rsc_arr)
+
+                    # MA: mic arc
                     if abs(MA_v)>1e-4:
-                        draw_moment_arc(ax_reac,sx_g,sy_g,MA_v,r=ss*2,color="#e67e00")
-                        ax_reac.text(sx_g+ss*2.5,sy_g,f"M{lbl}={MA_v:.2f}kNm",fontsize=8,color="#e67e00",fontweight="bold")
+                        draw_moment_arc(ax_reac,sx_g,sy_g,MA_v,r=ss*0.95,color=_cM)
+                        ax_reac.text(sx_g+ss*1.7,sy_g+ss*0.4,
+                                     f"M{lbl}={MA_v:.2f}kNm",fontsize=7.5,color=_cM,fontweight="bold",
+                                     bbox=dict(fc="white",alpha=0.9,ec=_cM,lw=0.5,pad=1.0,
+                                               boxstyle="round,pad=0.2"))
+
+                # Cotare: segmente sus, L jos
+                _draw_dim_line(ax_reac,0,0,end_x,end_y,f"L = {L:.2f} m",
+                               _dim_drop*1.55,_tick_h,above=False)
+                if len(key_xs)>2:
+                    for i in range(len(key_xs)-1):
+                        xa1r=key_xs[i]*c_ang;   ya1r=key_xs[i]*s_ang
+                        xa2r=key_xs[i+1]*c_ang; ya2r=key_xs[i+1]*s_ang
+                        _draw_dim_line(ax_reac,xa1r,ya1r,xa2r,ya2r,
+                                       f"{key_xs[i+1]-key_xs[i]:.2f} m",
+                                       _dim_drop*0.7,_tick_h,color="#4a6fa5",above=True)
+
                 draw_axes(ax_reac,min(0,end_x)-1.2,min(0,end_y)-0.3,length=0.7)
-                mg=max(L*0.2,1.5)
+                mg=max(L*0.22,1.5)
                 ax_reac.set_xlim(min(0,end_x)-mg,max(0,end_x)+mg)
-                ax_reac.set_ylim(min(0,end_y)-mg*1.5,max(0,end_y)+mg*1.5)
+                ax_reac.set_ylim(min(0,end_y)-_dim_drop*2.2-mg*0.4,max(0,end_y)+_dim_drop*1.0+mg*0.5)
                 ax_reac.set_aspect("equal"); ax_reac.axis("off")
-                ax_reac.set_title("Schiță cu Reacțiuni (portocaliu)",fontsize=12,fontweight="bold")
+                ax_reac.set_title("Schiță cu Reacțiuni la Reazeme",fontsize=12,fontweight="bold",pad=10)
                 st.pyplot(fig_reac); plt.close(fig_reac)
 
                 # Metrics tabel
