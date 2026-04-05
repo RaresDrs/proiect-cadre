@@ -332,9 +332,9 @@ if modul == "🔧 Calcul 2D Grinzi":
     for f in st.session_state.gv_forces:
         d=f.get("dist",0); fp=d*c_ang; fyp=d*s_ang
         if f["tip"]=="F":
-            fx_g=f.get("fx",0.0); fy_g=f.get("fy",0.0)
+            fx_g,fy_g=_force_xy(f)
             mag=np.sqrt(fx_g**2+fy_g**2)
-            lbl=f"{mag:.0f}kN" if mag>1e-9 else "F"
+            lbl=f"{abs(f.get('F',mag)):.0f}kN" if "axa" in f else f"{mag:.0f}kN"
             draw_force_arrow(ax1,fp,fyp,fx_g,fy_g,lbl,color="#c00",scale=arsc)
         else:
             _Mv=f.get("val",0)
