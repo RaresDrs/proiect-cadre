@@ -118,10 +118,6 @@ def draw_distributed_load_perp(ax, q_start_s, q_end_s, c_ang, s_ang, q_mag, q_do
     # Top line
     bx=[s*c_ang+px*arrow_len for s in xs_s]; by=[s*s_ang+py*arrow_len for s in xs_s]
     ax.plot(bx,by,color=color,lw=2.2)
-    mid=( q_start_s+q_end_s)/2
-    ax.text(mid*c_ang+px*(arrow_len+0.22),mid*s_ang+py*(arrow_len+0.22),
-            f"q={q_mag:.1f}kN/m",color=color,fontsize=9,fontweight='bold',ha='center',va='center',
-            bbox=dict(fc='white',alpha=0.7,ec='none',pad=1))
 
 def draw_moment_arc(ax,x,y,M,r=0.25,color='purple'):
     """Draw moment arc. M>0 = counterclockwise (antiorar), M<0 = clockwise (orar)."""
@@ -326,15 +322,16 @@ if modul == "🔧 Calcul 2D Grinzi":
     for idx,s in enumerate(st.session_state.gv_sup):
         sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
         lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
-        # label above / to the side of beam
-        ax1.text(sx_g-s_ang*ss*1.6,sy_g+c_ang*ss*1.6+0.12,lbl,
-                 fontsize=10,fontweight="bold",color="#1a3a5c",ha="center",va="bottom",
+        # label next to support (below-left)
+        _sup_drop=ss*2.8 if s["tip"]==2 else ss*2.2
+        ax1.text(sx_g-ss*0.8,sy_g-_sup_drop,lbl,
+                 fontsize=10,fontweight="bold",color="#1a3a5c",ha="center",va="top",
                  bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.25"))
         if s["tip"]==1: draw_pin(ax1,sx_g,sy_g,ss)
         elif s["tip"]==2: draw_roller(ax1,sx_g,sy_g,ss)
         elif s["tip"]==3: draw_fixed_bottom(ax1,sx_g,sy_g,c_ang,s_ang,ss)
 
-    # Draw q perpendicular to bar
+    # Draw q perpendicular to bar (no label — label goes below beam separately)
     if q_abs>0 and q_end>q_start:
         draw_distributed_load_perp(ax1,q_start,q_end,c_ang,s_ang,q_abs,q_down)
 
@@ -357,7 +354,16 @@ if modul == "🔧 Calcul 2D Grinzi":
     # Build sorted list of key x-positions (supports + ends)
     key_xs=sorted(set([0.0,L]+[s["x"] for s in st.session_state.gv_sup]))
 
-    # 1) Overall L — jos față de bară (mai departe pentru a nu se suprapune cu q)
+    # q label below beam (between beam and L dimension)
+    if q_abs>0 and q_end>q_start:
+        _q_lbl_drop=_dim_drop*0.55
+        _q_mid=(q_start+q_end)/2
+        _q_lx=_q_mid*c_ang+s_ang*_q_lbl_drop; _q_ly=_q_mid*s_ang-c_ang*_q_lbl_drop
+        ax1.text(_q_lx,_q_ly,f"q = {q_abs:.1f} kN/m",fontsize=9,fontweight='bold',
+                 color='#2255cc',ha='center',va='center',
+                 bbox=dict(fc='white',alpha=0.9,ec='#2255cc',lw=0.6,boxstyle='round,pad=0.25'))
+
+    # 1) Overall L — jos față de bară (sub label-ul q)
     _q_extra=max(0.8,q_abs*0.035+0.25)*1.3 if q_abs>0 else 0
     _draw_dim_line(ax1,0,0,end_x,end_y,f"L = {L:.2f} m",
                    _dim_drop*1.3+_q_extra,_tick_h,above=False)
