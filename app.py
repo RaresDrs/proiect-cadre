@@ -1523,11 +1523,13 @@ permite rotire relativa.
             # Stalp 2-B (s de la 0 la Hc, de la nodul 2 in jos la B)
             s_2B=np.linspace(0,Hc,npts)
             N_2B=-VBc*np.ones(npts)
-            # T pe stalp drept: forta taietoare = M_nod2/h (cuplu care anuleaza momentul)
-            T_2B_val=M_nod2_grinda/Hc if Hc>0 else 0.0
+            # Echilibru nod 2: M_grinda_nod2 + M_stalp_nod2 = 0 => M_stalp_2_top = -M_nod2_grinda
+            M_stalp2_top=-M_nod2_grinda
+            # T pe stalp drept = M_stalp2_top/h (cuplu); M la B = 0 (articulatie)
+            T_2B_val=M_stalp2_top/Hc if Hc>0 else 0.0
             T_2B=T_2B_val*np.ones(npts)
-            # M variaza liniar de la M_nod2 la 0
-            M_2B=M_nod2_grinda*(1-s_2B/Hc)
+            # M variaza liniar de la M_stalp2_top la 0
+            M_2B=M_stalp2_top*(1-s_2B/Hc)
 
             # Scale factor pentru diagrame
             all_N=np.concatenate([N_A1,N_gr,N_2B] + ([N_con] if has_console else []))
