@@ -1459,25 +1459,15 @@ permite rotire relativa.
 
             # -- Pasul 3: Momente la capetele barelor --
             st.markdown("### Pasul 3 — Momente la Capetele Barelor")
-            # Stalp A-1 (vertical, de la A=(0,0) la 1=(0,Hc))
+            # Stalp A-1: M la top = HA*h - H*(h-yH) = HA*yH (cand HA=H)
             M_A1_bot=MAc  # =0 pentru articulatie
-            M_A1_top=HAc*Hc  # momentul in nodul 1 din stalp
-            # Grinda 1-2 (orizontala, de la 1=(0,Hc) la 2=(Lc,Hc))
-            M_12_left=HAc*Hc  # momentul transmis din stalp (nod rigid)
-            # Momentul in orice punct x al grinzii (masurat de la nodul 1):
-            # M(x) = M_12_left + VA*x - q*x^2/2 - P*(x-aP)*H(x-aP)
-            # Dar atentie: VA actioneaza in sus la A, transmis prin stalp la nod 1
-            # La nod 1, fortele din stalp: N_stalp_top=-VA (compresiune), T_stalp_top=HA
-            # Pe grinda, la capatul stang: forta verticala = VA (in sus), forta orizontala = -HA
-            # Plus momentul M_A1_top = HA*Hc
-            M_12_right=VAc*Lc - qgc*Lc**2/2 - Pc*(Lc-aPc) if Pc>0 and aPc<Lc else VAc*Lc - qgc*Lc**2/2
-            # Corectie: momentul la capatul drept al grinzii (la nodul 2) calculat de la stanga:
-            # M_2 = HA*Hc + VA*L - q*L^2/2 - P*(L-aP)
-            # Sau de la dreapta: M_2 = VB*0 = verificare din stalp drept
+            M_A1_top=HAc*Hc - Hvant*max(Hc-yH, 0)
+            # Grinda 1-2: momentul transmis din stalp la nod 1 (nod rigid)
+            M_12_left=M_A1_top
             M_nod2_grinda = M_12_left + VAc*Lc - qgc*Lc**2/2 - (Pc*(Lc-aPc) if Pc>0 and aPc<=Lc else 0)
             # Consola C-1
-            M_con_C=0.0  # capat liber
-            M_con_1=Fcon*Lcon if has_console else 0.0  # momentul la nod 1 din consola
+            M_con_C=0.0
+            M_con_1=Fcon*Lcon if has_console else 0.0
 
             ec1,ec2=st.columns(2)
             with ec1:
