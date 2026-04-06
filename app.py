@@ -1459,15 +1459,18 @@ permite rotire relativa.
 
             # -- Pasul 3: Momente la capetele barelor --
             st.markdown("### Pasul 3 — Momente la Capetele Barelor")
-            # Stalp A-1: M la top = HA*h - H*(h-yH) = HA*yH (cand HA=H)
+            # Stalp A-1: M la top = HA*h - H*(h-yH)
             M_A1_bot=MAc  # =0 pentru articulatie
             M_A1_top=HAc*Hc - Hvant*max(Hc-yH, 0)
-            # Grinda 1-2: momentul transmis din stalp la nod 1 (nod rigid)
-            M_12_left=M_A1_top
-            M_nod2_grinda = M_12_left + VAc*Lc - qgc*Lc**2/2 - (Pc*(Lc-aPc) if Pc>0 and aPc<=Lc else 0)
             # Consola C-1
             M_con_C=0.0
             M_con_1=Fcon*Lcon if has_console else 0.0
+            # Echilibru nod 1 la moment: M_stalp + M_grinda + M_consola = 0
+            # => M_grinda_la_nod1 = -M_stalp - M_consola
+            M_12_left = -M_A1_top - M_con_1
+            M_nod2_grinda = M_12_left + VAc*Lc - qgc*Lc**2/2 - (Pc*(Lc-aPc) if Pc>0 and aPc<=Lc else 0)
+            # Forta orizontala transmisa pe grinda: T_stalp_top = HA - Hvant (deasupra H)
+            Hx_grinda = HAc - Hvant  # forta orizontala neta transmisa pe grinda
 
             ec1,ec2=st.columns(2)
             with ec1:
