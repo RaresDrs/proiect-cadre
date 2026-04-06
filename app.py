@@ -1517,11 +1517,14 @@ permite rotire relativa.
                 T_gr[i]=VAc - qgc*s - (Pc if s>aPc else 0)
                 M_gr[i]=M_A1_top + (M_con_1 if has_console else 0) + VAc*s - qgc*s**2/2 - (Pc*(s-aPc) if s>aPc else 0)
 
-            # Stalp 2-B (s de la 0 la Hc, de la 2 in jos la B)
+            # Stalp 2-B (s de la 0 la Hc, de la nodul 2 in jos la B)
             s_2B=np.linspace(0,Hc,npts)
-            N_2B=-VBc*np.ones(npts)  # compresiune
-            T_2B=np.zeros(npts)  # roller B nu are forta orizontala
-            M_2B=np.zeros(npts)  # moment = 0 pe tot stalpul (fara forte orizontale)
+            N_2B=-VBc*np.ones(npts)
+            # T pe stalp drept: forta taietoare = M_nod2/h (cuplu care anuleaza momentul)
+            T_2B_val=M_nod2_grinda/Hc if Hc>0 else 0.0
+            T_2B=T_2B_val*np.ones(npts)
+            # M variaza liniar de la M_nod2 la 0
+            M_2B=M_nod2_grinda*(1-s_2B/Hc)
 
             # Scale factor pentru diagrame
             all_N=np.concatenate([N_A1,N_gr,N_2B] + ([N_con] if has_console else []))
