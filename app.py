@@ -1483,15 +1483,14 @@ permite rotire relativa.
                     st.latex(rf"M_{{1,con}} = F \cdot L_{{con}} = {Fcon:.2f} \times {Lcon:.2f} = {M_con_1:.3f}\;\text{{kNm}}")
             with ec2:
                 st.markdown("**Grinda 1-2:**")
-                st.latex(rf"M_{{1,grinda}} = M_{{1,stalp}} = {M_12_left:.3f}\;\text{{kNm}}")
-                st.latex(rf"M_{{2}} = {M_nod2_grinda:.3f}\;\text{{kNm}}")
+                st.latex(rf"M_{{1,grinda}} = -(M_{{stalp}}+M_{{con}}) = {M_12_left:.3f}\;\text{{kNm}}")
+                st.latex(rf"M_{{2,grinda}} = {M_nod2_grinda:.3f}\;\text{{kNm}}")
                 st.markdown("**Stalp 2-B:**")
-                st.latex(rf"M_{{2,stalp}} = M_{{2,grinda}} = {M_nod2_grinda:.3f}\;\text{{kNm}}")
+                st.latex(rf"M_{{2,stalp}} = -M_{{2,grinda}} = {M_stalp2_top:.3f}\;\text{{kNm}}")
                 st.latex(rf"M_B = 0\;\text{{(reazem simplu)}}")
 
             # Verificare echilibru nod 1 la moment
-            sum_M1 = -M_A1_top + M_12_left + (M_con_1 if has_console else 0)  # trebuie ≈ 0 daca nod rigid
-            # Nod rigid: momentele de la capetele barelor se echilibreaza
+            sum_M1 = M_A1_top + M_12_left + M_con_1  # trebuie ≈ 0 (nod rigid)
 
             # -- Pasul 4: Diagrame N, T, M pe cadru --
             st.markdown("### Pasul 4 — Diagrame N, T, M pe Cadru")
