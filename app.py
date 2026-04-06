@@ -1126,7 +1126,7 @@ elif modul == "Statica 1 — Static Determinate":
     st.title("Statica 1 — Structuri Static Determinate")
     st.markdown("Calcul conform *Statica — Structuri Static Determinate* (975-4.pdf)")
     st.markdown("---")
-    tip_struct=st.sidebar.selectbox("Tip Structură",["Grindă Simplă","Grindă Gerber","Cadru Portal","Arc cu 3 Articulații","Zăbrele"],key="s1_tip")
+    tip_struct=st.sidebar.selectbox("Tip Structură",["Grindă Simplă","Grindă Gerber","Cadre 2D","Arc cu 3 Articulații","Zăbrele"],key="s1_tip")
 
     # ---- GRINDA SIMPLA ----
     if tip_struct=="Grindă Simplă":
@@ -1324,13 +1324,12 @@ elif modul == "Statica 1 — Static Determinate":
         cv1,cv2,cv3=st.columns(3); cv1.metric("T max",f"{np.max(np.abs(Tt)):.3f} kN"); cv2.metric("M max",f"{np.max(np.abs(Mt)):.3f} kNm")
         _ = cv3.success(f"M_art≈{Mart:.5f}≈0") if abs(Mart)<0.05 else cv3.error(f"M_art={Mart:.5f}≠0")
 
-    # ---- CADRU PORTAL ----
-    elif tip_struct=="Cadru Portal":
+    # ---- CADRE 2D ----
+    elif tip_struct=="Cadre 2D":
         st.header("Cadre Plane Static Determinate")
         with st.expander("Teorie (975-4.pdf, Cap.3)"):
             st.markdown("""**Nodul rigid** — pastreaza unghiurile intre bare. **Nodul articulat** — M=0, permite rotire relativa.
 **Cadre simplu rezemate:** 3 ecuatii de echilibru. **Cadre cu 3 articulatii:** 3 ec. globale + M=0 in articulatie.""")
-        subtip_cadru=st.selectbox("Tip Cadru",["Cadru Simplu Rezemat","Cadru cu 3 Articulatii"],key="cad_subtip")
 
         # === NODURI ===
         st.subheader("1. Noduri")
@@ -1400,18 +1399,11 @@ elif modul == "Statica 1 — Static Determinate":
                 sup_ed.append({"node":sn,"tip":st_})
         st.session_state.cad_sup=sup_ed
 
-        # Articulatie intermediara (cadru cu 3 articulatii)
-        has_hinge=False
-        hinge_node=None
-        if subtip_cadru=="Cadru cu 3 Articulatii":
-            st.subheader("3b. Articulatie Intermediara")
-            hinge_node=st.selectbox("Nod articulatie (M=0)",node_names,index=min(2,len(node_names)-1),key="cad_hinge")
-            has_hinge=True
-
         # Grad static
         total_r=sum([2 if s["tip"]==1 else 1 if s["tip"]==2 else 3 if s["tip"]==3 else 0 for s in sup_ed])
-        n_hinges=1 if has_hinge else 0
-        n_eq=3+n_hinges
+        has_hinge = False
+        hinge_node = None
+        n_eq=3
         G_val=total_r-n_eq
         if G_val==0: st.success(f"Static determinat -- {total_r} reactiuni, {n_eq} ecuatii")
         elif G_val>0: st.warning(f"Static nedeterminat ns={G_val}")
@@ -1517,16 +1509,6 @@ elif modul == "Statica 1 — Static Determinate":
             if comp=="Fx": A_mat[0,j]=1.0; A_mat[2,j]=-(yn-ref_y)
             elif comp=="Fy": A_mat[1,j]=1.0; A_mat[2,j]=(xn-ref_x)
             elif comp=="M": A_mat[2,j]=1.0
-
-        if has_hinge and n_eq>3:
-            xh,yh=get_node(hinge_node)
-            sumM_hinge=sum(Fext[n]["M"]+Fext[n]["Fy"]*(get_node(n)[0]-xh)-Fext[n]["Fx"]*(get_node(n)[1]-yh) for n in Fext)
-            b_vec[3]=-sumM_hinge
-            for j,(nd,comp) in enumerate(unknowns):
-                xn,yn=get_node(nd)
-                if comp=="Fx": A_mat[3,j]=-(yn-yh)
-                elif comp=="Fy": A_mat[3,j]=(xn-xh)
-                elif comp=="M": A_mat[3,j]=1.0
 
         reactions={}; solved=False
         if n_unk==n_eq and n_unk>0:
@@ -1928,7 +1910,7 @@ elif modul == "Statica 2 — Static Nedeterminate":
 
     # ---- CADRU NEDETERMINAT ----
     elif tip_s2=="Cadru Nedeterminat (Metoda Forțelor)":
-        st.header("Cadru Portal cu 2 Încastări — Metoda Forțelor")
+        st.header("Cadru 2D cu 2 Încastări — Metoda Forțelor")
         with st.expander("Teorie (138-3.pdf, Cap.2)"):
             st.markdown("ns=3 (X1=MA, X2=MB, X3=HB). SB=cadru cu 2 articulații.")
             st.latex(r"\delta_{ij}X_j+\Delta_{iP}=0\;(i=1,2,3)")
@@ -1991,7 +1973,7 @@ elif modul == "Statica 2 — Static Nedeterminate":
 
     # ---- METODA DEPLASARILOR ----
     elif tip_s2=="Metoda Deplasărilor":
-        st.header("Metoda Deplasărilor — Cadru Portal Simetric")
+        st.header("Metoda Deplasărilor — Cadru 2D Simetric")
         with st.expander("Teorie (138-3.pdf, Cap.3)"):
             st.markdown("Necunoscute: rotații noduri. Ecuații echilibru în noduri.")
             st.latex(r"M_0^{BC}=+\frac{qL^2}{12},\; r_{11}=4i_{st}+4i_{gr},\; r_{12}=2i_{gr}")
