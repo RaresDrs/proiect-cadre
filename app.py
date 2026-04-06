@@ -1327,30 +1327,13 @@ elif modul == "Statica 1 — Static Determinate":
     # ---- CADRU PORTAL ----
     elif tip_struct=="Cadru Portal":
         st.header("Cadre Plane Static Determinate")
-        with st.expander("Teorie (975-4.pdf, Cap.3 — Noțiuni de baza)"):
-            st.markdown("""
-**Nodul rigid** — 3 grade de libertate (2 translatii + 1 rotire). Tangentele la axele deformate
-pastreaza unghiurile initiale. Nu permite rotiri relative intre capetele barelor.
-
-**Nodul articulat** — 2 grade de libertate (2 translatii). Nu transmite moment incovoietor,
-permite rotire relativa.
-
-**Cadre simplu rezemate:** 3 ecuatii de echilibru (ΣFx=0, ΣFy=0, ΣM=0).
-
-**Cadre cu 3 articulatii:** 3 ecuatii globale + 1 conditie M=0 in articulatia intermediara
-(sau 2 ecuatii de moment nul fata de articulatie, de o parte si de alta).
-""")
-            st.latex(r"\text{Verificare: }\sum F_x=0,\;\sum F_y=0")
+        with st.expander("Teorie (975-4.pdf, Cap.3)"):
+            st.markdown("""**Nodul rigid** — pastreaza unghiurile intre bare. **Nodul articulat** — M=0, permite rotire relativa.
+**Cadre simplu rezemate:** 3 ecuatii de echilibru. **Cadre cu 3 articulatii:** 3 ec. globale + M=0 in articulatie.""")
         subtip_cadru=st.selectbox("Tip Cadru",["Cadru Simplu Rezemat","Cadru cu 3 Articulatii"],key="cad_subtip")
 
-        # =====================================================
-        # CADRU SIMPLU REZEMAT
-        # =====================================================
-        if subtip_cadru=="Cadru Simplu Rezemat":
-            st.subheader("Cadru Simplu Rezemat (Ex. 3.2.1)")
-            c1,c2,c3=st.columns(3)
-            with c1:
-                Hc=st.number_input("Inaltime stalpi h (m)",min_value=0.5,value=5.0,step=0.5,key="csr_H")
+        # === NODURI ===
+        st.subheader("1. Noduri")
                 Lc=st.number_input("Deschidere L (m)",min_value=0.5,value=8.0,step=0.5,key="csr_L")
                 tipc=st.selectbox("Rezemare",["Articulatie A + Reazem simplu B","Incastrare A + Reazem simplu B"],key="csr_tip")
             with c2:
