@@ -1469,6 +1469,7 @@ permite rotire relativa.
             # => M_grinda_la_nod1 = -M_stalp - M_consola
             M_12_left = -M_A1_top - M_con_1
             M_nod2_grinda = M_12_left + VAc*Lc - qgc*Lc**2/2 - (Pc*(Lc-aPc) if Pc>0 and aPc<=Lc else 0)
+            M_stalp2_top = -M_nod2_grinda
             # Forta orizontala transmisa pe grinda: T_stalp_top = HA - Hvant (deasupra H)
             Hx_grinda = HAc - Hvant  # forta orizontala neta transmisa pe grinda
 
