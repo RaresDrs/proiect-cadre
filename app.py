@@ -1514,11 +1514,11 @@ permite rotire relativa.
 
             # Grinda 1-2 (s de la 0 la Lc, de la 1 la 2)
             s_gr=np.linspace(0,Lc,npts)
-            N_gr=-HAc*np.ones(npts)  # efort axial = reactiunea orizontala transmisa
+            N_gr=Hx_grinda*np.ones(npts)  # efort axial pe grinda = forta orizontala neta
             T_gr=np.zeros(npts); M_gr=np.zeros(npts)
             for i,s in enumerate(s_gr):
                 T_gr[i]=VAc - qgc*s - (Pc if s>aPc else 0)
-                M_gr[i]=M_A1_top + (M_con_1 if has_console else 0) + VAc*s - qgc*s**2/2 - (Pc*(s-aPc) if s>aPc else 0)
+                M_gr[i]=M_12_left + VAc*s - qgc*s**2/2 - (Pc*(s-aPc) if s>aPc else 0)
 
             # Stalp 2-B (s de la 0 la Hc, de la nodul 2 in jos la B)
             s_2B=np.linspace(0,Hc,npts)
