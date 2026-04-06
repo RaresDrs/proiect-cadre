@@ -5,6 +5,9 @@ import matplotlib.patches as mpatches
 from matplotlib.patches import Arc
 from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
+from anastruct import SystemElements
+import streamlit.components.v1 as components
+import json
 
 # ============================================================
 # PAGINA
@@ -444,66 +447,67 @@ if modul == "Calcul Grinzi simplu":
 
                 def nidx(xv): return nodes_s.index(round(xv,6))
 
-                T_blk=np.array([[c_ang,s_ang,0],[-s_ang,c_ang,0],[0,0,1]])
-                T6=np.zeros((6,6)); T6[:3,:3]=T_blk; T6[3:,3:]=T_blk
-                K_g=np.zeros((3*nn,3*nn)); F_g=np.zeros(3*nn)
-
+                # --- anastruct solver ---
+                ss_fem=SystemElements(EI=E*I_sec, EA=E*A_sec)
                 for i in range(ne):
-                    Le=nodes_s[i+1]-nodes_s[i]
-                    if Le<1e-9: continue
-                    EA=E*A_sec/Le; EI12=12*E*I_sec/Le**3; EI6=6*E*I_sec/Le**2; EI4=4*E*I_sec/Le; EI2=2*E*I_sec/Le
-                    k_l=np.array([[EA,0,0,-EA,0,0],[0,EI12,EI6,0,-EI12,EI6],[0,EI6,EI4,0,-EI6,EI2],
-                                  [-EA,0,0,EA,0,0],[0,-EI12,-EI6,0,EI12,-EI6],[0,EI6,EI2,0,-EI6,EI4]])
-                    k_g=T6.T@k_l@T6; idx=slice(3*i,3*i+6); K_g[idx,idx]+=k_g
-                    mid=(nodes_s[i]+nodes_s[i+1])/2
-                    if q_abs>0 and (q_start-1e-6<=mid<=q_end+1e-6):
-                        # q perpendicular to bar → local: qxl=0, qyl=-q_eff
-                        qyl=-q_eff  # local y load (positive q_eff=down → qyl negative = down in local)
-                        fe_l=np.array([0,qyl*Le/2,qyl*Le**2/12,0,qyl*Le/2,-qyl*Le**2/12])
-                        F_g[idx]+=T6.T@fe_l
+                    x1=nodes_s[i]; x2=nodes_s[i+1]
+                    ss_fem.add_element(location=[[x1*c_ang,x1*s_ang],[x2*c_ang,x2*s_ang]])
 
+                # Node ID mapping: anastruct node IDs start at 1
+                # node i in nodes_s → anastruct node_id = i+1
+                for s in st.session_state.gv_sup:
+                    nid=nidx(s["x"])+1
+                    if s["tip"]==1: ss_fem.add_support_hinged(node_id=nid)
+                    elif s["tip"]==2: ss_fem.add_support_roll(node_id=nid)
+                    elif s["tip"]==3: ss_fem.add_support_fixed(node_id=nid)
+
+                # Distributed loads — gravitational (global y direction)
+                if q_abs>0 and q_end>q_start:
+                    for eid in range(1,ne+1):
+                        mid=(nodes_s[eid-1]+nodes_s[eid])/2
+                        if q_start-1e-6<=mid<=q_end+1e-6:
+                            q_sign=-q_abs if q_down else q_abs
+                            ss_fem.q_load(element_id=eid, q=q_sign, direction='y')
+
+                # Point loads and moments
                 for f in st.session_state.gv_forces:
-                    ni=nidx(f.get("dist",0)); base=3*ni
+                    nid=nidx(f.get("dist",0))+1
                     if f["tip"]=="F":
                         fx_f,fy_f=_force_xy(f)
-                        F_g[base]+=fx_f; F_g[base+1]+=fy_f
-                    else: F_g[base+2]+=f.get("val",0)
+                        if abs(fx_f)>1e-9: ss_fem.point_load(node_id=nid, Fx=fx_f)
+                        if abs(fy_f)>1e-9: ss_fem.point_load(node_id=nid, Fy=fy_f)
+                    else:
+                        ss_fem.moment_load(node_id=nid, Ty=f.get("val",0))
 
-                # Boundary conditions
-                bl=[]
+                ss_fem.solve()
+
+                # Build R_g (reactions array) for downstream drawing code
+                R_g=np.zeros(3*nn)
                 for s in st.session_state.gv_sup:
-                    ni=nidx(s["x"]); base=3*ni
-                    if s["tip"]==1: bl+=[base,base+1]
-                    elif s["tip"]==2: bl+=[base+1]
-                    elif s["tip"]==3: bl+=[base,base+1,base+2]
-                bl=list(set(bl))
-                free=[i for i in range(3*nn) if i not in bl]
-                if not free: raise ValueError("Nicio liberă — mecanism")
-                U_g=np.zeros(3*nn)
-                U_g[free]=np.linalg.solve(K_g[np.ix_(free,free)],F_g[free])
-                R_g=K_g@U_g-F_g
-                U_loc=np.zeros(3*nn)
-                for i in range(nn): U_loc[3*i:3*i+3]=T_blk@U_g[3*i:3*i+3]
+                    ni=nidx(s["x"]); nid=ni+1; base=3*ni
+                    r=ss_fem.get_node_results_system(node_id=nid)
+                    R_g[base]=r["Fx"]; R_g[base+1]=r["Fy"]; R_g[base+2]=r["Tz"]
 
+                # Build U_loc (local displacements) for deflection display
+                U_loc=np.zeros(3*nn)
+                for i in range(nn):
+                    nid=i+1
+                    r=ss_fem.get_node_results_system(node_id=nid)
+                    U_loc[3*i]=r["ux"]; U_loc[3*i+1]=r["uy"]; U_loc[3*i+2]=r["phi_z"]
+
+                # Build diagram arrays from anastruct element results
                 x_pl,N_pl,V_pl,M_pl=[],[],[],[]
                 for i in range(ne):
+                    el=ss_fem.element_map[i+1]
                     Le=nodes_s[i+1]-nodes_s[i]
-                    if Le<1e-9: continue
-                    EI12=12*E*I_sec/Le**3; EI6=6*E*I_sec/Le**2; EI4=4*E*I_sec/Le; EI2=2*E*I_sec/Le
-                    EA=E*A_sec/Le
-                    k_l=np.array([[EA,0,0,-EA,0,0],[0,EI12,EI6,0,-EI12,EI6],[0,EI6,EI4,0,-EI6,EI2],
-                                  [-EA,0,0,EA,0,0],[0,-EI12,-EI6,0,EI12,-EI6],[0,EI6,EI2,0,-EI6,EI4]])
-                    ue=np.concatenate([U_loc[3*i:3*i+3],U_loc[3*(i+1):3*(i+1)+3]])
-                    mid=(nodes_s[i]+nodes_s[i+1])/2
-                    hq=q_abs>0 and (q_start-1e-6<=mid<=q_end+1e-6)
-                    qyl_loc=-q_eff if hq else 0
-                    fel=np.array([0,qyl_loc*Le/2,qyl_loc*Le**2/12,0,qyl_loc*Le/2,-qyl_loc*Le**2/12]) if hq else np.zeros(6)
-                    fe2=k_l@ue-fel; Ns=-fe2[0]; Vs=fe2[1]; Ms=-fe2[2]
-                    xs=np.linspace(0,Le,80)
-                    Nx=Ns*np.ones_like(xs)
-                    Vx=Vs+qyl_loc*xs if hq else Vs*np.ones_like(xs)
-                    Mx=Ms+Vs*xs+qyl_loc*xs**2/2 if hq else Ms+Vs*xs
-                    x_pl.extend(nodes_s[i]+xs); N_pl.extend(Nx); V_pl.extend(Vx); M_pl.extend(Mx)
+                    npts_el=len(el.bending_moment)
+                    xs=np.linspace(nodes_s[i],nodes_s[i+1],npts_el)
+                    x_pl.extend(xs)
+                    # anastruct: axial force from N_1/N_2 (constant per element)
+                    N_arr=np.linspace(el.N_1,el.N_2,npts_el)
+                    N_pl.extend(N_arr)
+                    V_pl.extend(el.shear_force)
+                    M_pl.extend(el.bending_moment)
 
                 st.success("Calcul finalizat!")
                 xa=np.array(x_pl); Va=np.array(V_pl); Ma=np.array(M_pl); Na=np.array(N_pl)
@@ -727,14 +731,15 @@ if modul == "Calcul Grinzi simplu":
 
                 # Model de calcul
                 with st.expander("Model de calcul (pas cu pas)"):
-                    st.markdown(f"""**Structura:** {len(st.session_state.gv_sup)} reazeme, {n_sup} noduri FEM, {ne} elemente
+                    st.markdown(f"""**Structura:** {len(st.session_state.gv_sup)} reazeme, {nn} noduri FEM, {ne} elemente
 **EI** = {E:.2e} kN/m² × {I_sec:.4e} m⁴ = {E*I_sec:.3e} kNm²
-**EA** = {E:.2e} × {A_sec:.4f} = {E*A_sec:.3e} kN""")
+**EA** = {E:.2e} × {A_sec:.4f} = {E*A_sec:.3e} kN
+**Solver:** anastruct (SystemElements)""")
                     st.markdown("**Algoritmul FEM:**")
                     st.latex(r"\mathbf{K}\cdot\mathbf{u}=\mathbf{F}\;\Rightarrow\;\mathbf{u}_{liber}=\mathbf{K}_{ll}^{-1}\cdot\mathbf{F}_{liber}")
                     st.latex(r"\mathbf{R}=\mathbf{K}\cdot\mathbf{u}-\mathbf{F}\quad(\text{reacțiuni})")
                     st.markdown(f"**Noduri FEM:** {[f'{v:.2f}m' for v in nodes_s]}")
-                    st.markdown(f"**GDL total:** {3*nn}, **blocate:** {len(bl)}, **libere:** {len(free)}")
+                    st.markdown(f"**GDL total:** {3*nn}")
                     st.markdown("**Eforturi în secțiune prin integrare:**")
                     st.latex(r"N(x)=\text{const./element},\quad T(x)=T_0+q\cdot x,\quad M(x)=M_0+T_0\cdot x+\frac{q x^2}{2}")
 
@@ -872,29 +877,21 @@ if modul == "Calcul Grinzi simplu":
                         Le_e=nodes_s[i_e+1]-nodes_s[i_e]
                         if Le_e<1e-9: continue
                         x_st=nodes_s[i_e]; x_en=nodes_s[i_e+1]
-                        EA_e=E*A_sec/Le_e; EI12_e=12*E*I_sec/Le_e**3; EI6_e=6*E*I_sec/Le_e**2
-                        EI4_e=4*E*I_sec/Le_e; EI2_e=2*E*I_sec/Le_e
-                        k_l_e=np.array([[EA_e,0,0,-EA_e,0,0],[0,EI12_e,EI6_e,0,-EI12_e,EI6_e],[0,EI6_e,EI4_e,0,-EI6_e,EI2_e],
-                                        [-EA_e,0,0,EA_e,0,0],[0,-EI12_e,-EI6_e,0,EI12_e,-EI6_e],[0,EI6_e,EI2_e,0,-EI6_e,EI4_e]])
-                        ue_e=np.concatenate([U_loc[3*i_e:3*i_e+3],U_loc[3*(i_e+1):3*(i_e+1)+3]])
+                        el_e=ss_fem.element_map[i_e+1]
+                        N_st=el_e.N_1; V_st=el_e.shear_force[0]; V_end=el_e.shear_force[-1]
+                        M_st=el_e.bending_moment[0]; M_end=el_e.bending_moment[-1]
                         mid_e=(nodes_s[i_e]+nodes_s[i_e+1])/2
                         hq_e=q_abs>0 and (q_start-1e-6<=mid_e<=q_end+1e-6)
-                        qyl_e=-q_eff if hq_e else 0
-                        fel_e=np.array([0,qyl_e*Le_e/2,qyl_e*Le_e**2/12,0,qyl_e*Le_e/2,-qyl_e*Le_e**2/12]) if hq_e else np.zeros(6)
-                        fe2_e=k_l_e@ue_e-fel_e
-                        N_st=-fe2_e[0]; V_st=fe2_e[1]; M_st=-fe2_e[2]
 
-                        hdr=f"Elem.{i_e+1} [{x_st:.2f}–{x_en:.2f}]m" + (f"  q={abs(qyl_e):.1f}kN/m" if hq_e else "")
+                        hdr=f"Elem.{i_e+1} [{x_st:.2f}–{x_en:.2f}]m" + (f"  q={q_abs:.1f}kN/m" if hq_e else "")
                         if hq_e:
-                            V_end_calc=V_st+qyl_e*Le_e
-                            M_end_calc=M_st+V_st*Le_e+qyl_e*Le_e**2/2
-                            all_lines.append(f"  {hdr}:  N={N_st:.2f},  T=[{V_st:.2f}→{V_end_calc:.2f}],  M=[{M_st:.2f}→{M_end_calc:.2f}] kN(m)")
+                            all_lines.append(f"  {hdr}:  N={N_st:.2f},  T=[{V_st:.2f}→{V_end:.2f}],  M=[{M_st:.2f}→{M_end:.2f}] kN(m)")
                         else:
-                            M_end_calc=M_st+V_st*Le_e
-                            all_lines.append(f"  {hdr}:  N={N_st:.2f},  T={V_st:.2f},  M=[{M_st:.2f}→{M_end_calc:.2f}] kN(m)")
-                        if hq_e and abs(qyl_e)>1e-9 and V_st*(V_st+qyl_e*Le_e)<0:
-                            x0_e=-V_st/qyl_e; M_max_e=M_st+V_st*x0_e+qyl_e*x0_e**2/2
-                            all_lines.append(f"      → T=0 la x₀={x_st+x0_e:.3f} m,  M_max={M_max_e:.2f} kNm")
+                            all_lines.append(f"  {hdr}:  N={N_st:.2f},  T={V_st:.2f},  M=[{M_st:.2f}→{M_end:.2f}] kN(m)")
+                        if hq_e and V_st*V_end<0:
+                            er=el_e.results if hasattr(el_e,'results') else None
+                            M_max_e=max(abs(el_e.bending_moment.min()),abs(el_e.bending_moment.max()))
+                            all_lines.append(f"      → M_max={M_max_e:.2f} kNm")
 
                     if len(sign_ch)>0:
                         all_lines.append("")
@@ -1331,53 +1328,288 @@ elif modul == "Statica 1 — Static Determinate":
             st.markdown("""**Nodul rigid** — pastreaza unghiurile intre bare. **Nodul articulat** — M=0, permite rotire relativa.
 **Cadre simplu rezemate:** 3 ecuatii de echilibru. **Cadre cu 3 articulatii:** 3 ec. globale + M=0 in articulatie.""")
 
-        # === NODURI ===
-        st.subheader("1. Noduri")
-        if "cad_nodes" not in st.session_state:
-            st.session_state.cad_nodes=[
-                {"name":"A","x":0.0,"y":0.0},
-                {"name":"1","x":0.0,"y":4.0},
-                {"name":"2","x":6.0,"y":4.0},
-                {"name":"B","x":6.0,"y":0.0}]
-        nc1,nc2=st.columns([1,5])
-        with nc1:
-            if st.button("+ Nod",key="cad_nadd"):
-                nn=len(st.session_state.cad_nodes)
-                st.session_state.cad_nodes.append({"name":str(nn),"x":3.0,"y":2.0})
-            if st.button("- Nod",key="cad_ndel"):
-                if len(st.session_state.cad_nodes)>2: st.session_state.cad_nodes.pop()
-        nodes_ed=[]
-        ncols=st.columns(min(len(st.session_state.cad_nodes),5))
-        for i,nd in enumerate(st.session_state.cad_nodes):
-            with ncols[i%5]:
-                nm=st.text_input(f"Nume",value=nd["name"],key=f"cad_nn_{i}")
-                nx_=st.number_input(f"x (m)",value=float(nd["x"]),step=0.5,key=f"cad_nx_{i}")
-                ny_=st.number_input(f"y (m)",value=float(nd["y"]),step=0.5,key=f"cad_ny_{i}")
-                nodes_ed.append({"name":nm,"x":nx_,"y":ny_})
-        st.session_state.cad_nodes=nodes_ed
-        nodes=nodes_ed
-        node_names=[n["name"] for n in nodes]
+        # === MOD INTRODUCERE ===
+        input_mode=st.radio("Mod introducere geometrie",["Desenare (click & draw)","Manual (coordonate)"],horizontal=True,key="cad_input_mode")
 
-        # === BARE ===
-        st.subheader("2. Bare")
-        if "cad_bars" not in st.session_state:
-            st.session_state.cad_bars=[
-                {"n1":"A","n2":"1"},{"n1":"1","n2":"2"},{"n1":"2","n2":"B"}]
-        bc1,bc2=st.columns([1,5])
-        with bc1:
-            if st.button("+ Bara",key="cad_badd"):
-                st.session_state.cad_bars.append({"n1":node_names[0],"n2":node_names[-1]})
-            if st.button("- Bara",key="cad_bdel"):
-                if len(st.session_state.cad_bars)>1: st.session_state.cad_bars.pop()
-        bars_ed=[]
-        bcols=st.columns(min(len(st.session_state.cad_bars),4))
-        for i,br in enumerate(st.session_state.cad_bars):
-            with bcols[i%4]:
-                st.markdown(f"**Bara {i+1}**")
-                n1s=st.selectbox("De la",node_names,index=node_names.index(br["n1"]) if br["n1"] in node_names else 0,key=f"cad_bn1_{i}")
-                n2s=st.selectbox("La",node_names,index=node_names.index(br["n2"]) if br["n2"] in node_names else min(1,len(node_names)-1),key=f"cad_bn2_{i}")
-                bars_ed.append({"n1":n1s,"n2":n2s})
-        st.session_state.cad_bars=bars_ed
+        if input_mode=="Desenare (click & draw)":
+            # --- CANVAS DRAWING MODE (HTML/JS) ---
+            st.subheader("1-2. Desenează Cadrul")
+            st.caption("**Click** pe grilă = adaugă nod. **Click pe două noduri** succesiv = bara între ele. **Click dreapta** pe nod/bară = șterge.")
+
+            _cad_grid=st.sidebar.number_input("Grilă (m)",min_value=0.5,max_value=2.0,value=1.0,step=0.5,key="cad_grid_m")
+            _cad_W_m=st.sidebar.number_input("Lățime canvas (m)",min_value=4.0,max_value=30.0,value=14.0,step=1.0,key="cad_Wm")
+            _cad_H_m=st.sidebar.number_input("Înălțime canvas (m)",min_value=4.0,max_value=20.0,value=10.0,step=1.0,key="cad_Hm")
+            _ppm=50
+            _cW=int(_cad_W_m*_ppm); _cH=int(_cad_H_m*_ppm)
+
+            # Existing data to pre-populate canvas
+            _init_nodes=json.dumps(st.session_state.get("cad_nodes",[]))
+            _init_bars=json.dumps(st.session_state.get("cad_bars",[]))
+
+            _canvas_html=f"""
+<div style="position:relative;display:inline-block;">
+<canvas id="cad_cv" width="{_cW}" height="{_cH}" style="border:2px solid #1a3a5c;cursor:crosshair;border-radius:6px;"></canvas>
+<div id="cad_info" style="position:absolute;top:8px;right:12px;background:rgba(255,255,255,0.92);padding:4px 10px;border-radius:4px;font:12px monospace;color:#333;pointer-events:none;"></div>
+</div>
+<div style="margin-top:6px;">
+<button onclick="undoLast()" style="padding:4px 14px;margin-right:6px;border-radius:4px;border:1px solid #888;background:#f0f0f0;cursor:pointer;">Undo</button>
+<button onclick="clearAll()" style="padding:4px 14px;margin-right:6px;border-radius:4px;border:1px solid #888;background:#f0f0f0;cursor:pointer;">Sterge tot</button>
+<button onclick="exportData()" style="padding:4px 14px;border-radius:4px;border:1px solid #1a3a5c;background:#1a3a5c;color:#fff;cursor:pointer;font-weight:bold;">Aplica in calcul</button>
+<span id="cad_status" style="margin-left:12px;font:12px sans-serif;color:#2a2;"></span>
+</div>
+<textarea id="cad_output" style="display:none;"></textarea>
+<script>
+(function(){{
+const cv=document.getElementById('cad_cv'), ctx=cv.getContext('2d');
+const PPM={_ppm}, GRID={_cad_grid}, W={_cW}, H={_cH};
+const SNAP=GRID/2;
+let nodes=[], bars=[], selNode=-1, history=[];
+const NAMES='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+// Load initial data
+try{{
+    const iN={_init_nodes}, iB={_init_bars};
+    if(iN.length>0){{ nodes=iN.map(n=>({{name:n.name,x:n.x,y:n.y}})); }}
+    if(iB.length>0){{ bars=iB.map(b=>({{n1:b.n1,n2:b.n2}})); }}
+}}catch(e){{}}
+
+function toP(mx,my){{ return [mx*PPM, H-my*PPM]; }}
+function toM(px,py){{ return [snap(px/PPM), snap((H-py)/PPM)]; }}
+function snap(v){{ return Math.round(v/SNAP)*SNAP; }}
+function dist(a,b){{ return Math.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2); }}
+
+function findNode(mx,my){{
+    for(let i=0;i<nodes.length;i++){{
+        if(Math.abs(nodes[i].x-mx)<0.3 && Math.abs(nodes[i].y-my)<0.3) return i;
+    }}
+    return -1;
+}}
+
+function nextName(){{
+    const used=new Set(nodes.map(n=>n.name));
+    for(let c of NAMES) if(!used.has(c)) return c;
+    return String(nodes.length);
+}}
+
+function draw(){{
+    ctx.clearRect(0,0,W,H);
+    // Grid
+    ctx.strokeStyle='#e0e0e0'; ctx.lineWidth=0.5;
+    const gp=GRID*PPM;
+    for(let x=0;x<=W;x+=gp){{
+        ctx.strokeStyle=(x/gp)%5===0?'#bbb':'#e0e0e0';
+        ctx.lineWidth=(x/gp)%5===0?1.5:0.5;
+        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+    }}
+    for(let y=0;y<=H;y+=gp){{
+        ctx.strokeStyle=(y/gp)%5===0?'#bbb':'#e0e0e0';
+        ctx.lineWidth=(y/gp)%5===0?1.5:0.5;
+        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    }}
+    // Axis labels
+    ctx.fillStyle='#888'; ctx.font='11px monospace'; ctx.textAlign='center';
+    for(let x=0;x<=W;x+=gp*2) ctx.fillText((x/PPM).toFixed(0),x,H-3);
+    ctx.textAlign='left';
+    for(let y=0;y<=H;y+=gp*2) ctx.fillText(((H-y)/PPM).toFixed(0),3,y+12);
+    // Bars
+    ctx.strokeStyle='#1a3a5c'; ctx.lineWidth=5; ctx.lineCap='round';
+    for(const b of bars){{
+        const n1=nodes.find(n=>n.name===b.n1), n2=nodes.find(n=>n.name===b.n2);
+        if(!n1||!n2) continue;
+        const[x1,y1]=toP(n1.x,n1.y),[x2,y2]=toP(n2.x,n2.y);
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    }}
+    // Nodes
+    for(let i=0;i<nodes.length;i++){{
+        const[px,py]=toP(nodes[i].x,nodes[i].y);
+        ctx.beginPath(); ctx.arc(px,py,7,0,Math.PI*2);
+        ctx.fillStyle=i===selNode?'#e63946':'#0d1b2a'; ctx.fill();
+        ctx.fillStyle='#0d1b2a'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+        ctx.fillText(nodes[i].name, px, py-12);
+    }}
+    // Info
+    document.getElementById('cad_info').textContent=nodes.length+' noduri, '+bars.length+' bare';
+}}
+
+cv.addEventListener('click',function(e){{
+    const rect=cv.getBoundingClientRect();
+    const px=e.clientX-rect.left, py=e.clientY-rect.top;
+    const[mx,my]=toM(px,py);
+    const hit=findNode(mx,my);
+    if(hit>=0){{
+        if(selNode>=0 && selNode!==hit){{
+            const n1=nodes[selNode].name, n2=nodes[hit].name;
+            if(!bars.some(b=>(b.n1===n1&&b.n2===n2)||(b.n1===n2&&b.n2===n1))){{
+                bars.push({{n1,n2}});
+                history.push({{type:'bar',n1,n2}});
+            }}
+            selNode=-1;
+        }} else {{
+            selNode=hit;
+        }}
+    }} else {{
+        nodes.push({{name:nextName(),x:mx,y:my}});
+        history.push({{type:'node',name:nodes[nodes.length-1].name}});
+        selNode=-1;
+    }}
+    draw();
+}});
+
+cv.addEventListener('contextmenu',function(e){{
+    e.preventDefault();
+    const rect=cv.getBoundingClientRect();
+    const px=e.clientX-rect.left, py=e.clientY-rect.top;
+    const[mx,my]=toM(px,py);
+    const hit=findNode(mx,my);
+    if(hit>=0){{
+        const nm=nodes[hit].name;
+        bars=bars.filter(b=>b.n1!==nm&&b.n2!==nm);
+        nodes.splice(hit,1);
+        selNode=-1;
+    }} else {{
+        // Try removing nearest bar
+        let bestD=20/PPM, bestI=-1;
+        for(let i=0;i<bars.length;i++){{
+            const n1=nodes.find(n=>n.name===bars[i].n1), n2=nodes.find(n=>n.name===bars[i].n2);
+            if(!n1||!n2) continue;
+            const dx=n2.x-n1.x, dy=n2.y-n1.y, L=Math.sqrt(dx*dx+dy*dy);
+            if(L<0.01) continue;
+            const t=Math.max(0,Math.min(1,((mx-n1.x)*dx+(my-n1.y)*dy)/(L*L)));
+            const cx=n1.x+t*dx, cy=n1.y+t*dy;
+            const d=Math.sqrt((mx-cx)**2+(my-cy)**2);
+            if(d<bestD){{ bestD=d; bestI=i; }}
+        }}
+        if(bestI>=0) bars.splice(bestI,1);
+    }}
+    draw();
+}});
+
+cv.addEventListener('mousemove',function(e){{
+    const rect=cv.getBoundingClientRect();
+    const px=e.clientX-rect.left, py=e.clientY-rect.top;
+    const[mx,my]=toM(px,py);
+    cv.title=mx.toFixed(1)+', '+my.toFixed(1)+' m';
+}});
+
+window.undoLast=function(){{
+    if(history.length===0) return;
+    const last=history.pop();
+    if(last.type==='node'){{
+        const idx=nodes.findIndex(n=>n.name===last.name);
+        if(idx>=0){{ bars=bars.filter(b=>b.n1!==last.name&&b.n2!==last.name); nodes.splice(idx,1); }}
+    }} else if(last.type==='bar'){{
+        const idx=bars.findIndex(b=>b.n1===last.n1&&b.n2===last.n2);
+        if(idx>=0) bars.splice(idx,1);
+    }}
+    selNode=-1; draw();
+}};
+
+window.clearAll=function(){{ nodes=[]; bars=[]; selNode=-1; history=[]; draw(); }};
+
+window.exportData=function(){{
+    const data=JSON.stringify({{nodes:nodes,bars:bars}});
+    // Write to Streamlit via hidden textarea + fragment hack
+    const ta=document.getElementById('cad_output');
+    ta.value=data;
+    // Use Streamlit's setFrameHeight to signal, and pass data via URL fragment
+    const url=new URL(window.parent.location);
+    url.searchParams.set('cad_draw_data',encodeURIComponent(data));
+    window.parent.history.replaceState(null,'',url);
+    document.getElementById('cad_status').textContent='Aplicat! Reincarca pagina (F5) pentru calcul.';
+    // Auto-reload after short delay
+    setTimeout(function(){{ window.parent.location.reload(); }}, 400);
+}};
+
+draw();
+}})();
+</script>
+"""
+            components.html(_canvas_html, height=_cH+60, scrolling=False)
+
+            # Read data back from query params
+            _qp=st.query_params
+            _draw_data=_qp.get("cad_draw_data","")
+            if _draw_data:
+                try:
+                    _parsed=json.loads(_draw_data)
+                    _canvas_nodes=_parsed.get("nodes",[])
+                    _canvas_bars=_parsed.get("bars",[])
+                    if _canvas_nodes:
+                        st.session_state.cad_nodes=[{"name":n["name"],"x":round(n["x"],2),"y":round(n["y"],2)} for n in _canvas_nodes]
+                        st.session_state.cad_bars=[{"n1":b["n1"],"n2":b["n2"]} for b in _canvas_bars]
+                        valid_names={n["name"] for n in _canvas_nodes}
+                        st.session_state.cad_sup=[s for s in st.session_state.get("cad_sup",[]) if s["node"] in valid_names]
+                        if not st.session_state.cad_sup and len(_canvas_nodes)>=2:
+                            st.session_state.cad_sup=[{"node":_canvas_nodes[0]["name"],"tip":1},{"node":_canvas_nodes[-1]["name"],"tip":2}]
+                except: pass
+
+            # Show detected geometry
+            _cur_nodes=st.session_state.get("cad_nodes",[])
+            _cur_bars=st.session_state.get("cad_bars",[])
+            if _cur_nodes:
+                nc1,nc2=st.columns(2)
+                with nc1:
+                    st.markdown("**Noduri:**")
+                    for nd in _cur_nodes:
+                        st.text(f"  {nd['name']}: ({nd['x']:.1f}, {nd['y']:.1f}) m")
+                with nc2:
+                    st.markdown("**Bare:**")
+                    for i,br in enumerate(_cur_bars):
+                        st.text(f"  Bara {i+1}: {br['n1']} -> {br['n2']}")
+            else:
+                st.info("Click pe grilă pentru a adăuga noduri. Click pe două noduri pentru a crea o bară.")
+
+        else:
+            # --- MANUAL INPUT MODE ---
+            st.subheader("1. Noduri")
+            if "cad_nodes" not in st.session_state:
+                st.session_state.cad_nodes=[
+                    {"name":"A","x":0.0,"y":0.0},
+                    {"name":"1","x":0.0,"y":4.0},
+                    {"name":"2","x":6.0,"y":4.0},
+                    {"name":"B","x":6.0,"y":0.0}]
+            nc1,nc2=st.columns([1,5])
+            with nc1:
+                if st.button("+ Nod",key="cad_nadd"):
+                    nn=len(st.session_state.cad_nodes)
+                    st.session_state.cad_nodes.append({"name":str(nn),"x":3.0,"y":2.0})
+                if st.button("- Nod",key="cad_ndel"):
+                    if len(st.session_state.cad_nodes)>2: st.session_state.cad_nodes.pop()
+            nodes_ed=[]
+            ncols=st.columns(min(len(st.session_state.cad_nodes),5))
+            for i,nd in enumerate(st.session_state.cad_nodes):
+                with ncols[i%5]:
+                    nm=st.text_input(f"Nume",value=nd["name"],key=f"cad_nn_{i}")
+                    nx_=st.number_input(f"x (m)",value=float(nd["x"]),step=0.5,key=f"cad_nx_{i}")
+                    ny_=st.number_input(f"y (m)",value=float(nd["y"]),step=0.5,key=f"cad_ny_{i}")
+                    nodes_ed.append({"name":nm,"x":nx_,"y":ny_})
+            st.session_state.cad_nodes=nodes_ed
+
+            st.subheader("2. Bare")
+            if "cad_bars" not in st.session_state:
+                st.session_state.cad_bars=[
+                    {"n1":"A","n2":"1"},{"n1":"1","n2":"2"},{"n1":"2","n2":"B"}]
+            node_names_m=[n["name"] for n in st.session_state.cad_nodes]
+            bc1,bc2=st.columns([1,5])
+            with bc1:
+                if st.button("+ Bara",key="cad_badd"):
+                    st.session_state.cad_bars.append({"n1":node_names_m[0],"n2":node_names_m[-1]})
+                if st.button("- Bara",key="cad_bdel"):
+                    if len(st.session_state.cad_bars)>1: st.session_state.cad_bars.pop()
+            bars_ed_m=[]
+            bcols=st.columns(min(len(st.session_state.cad_bars),4))
+            for i,br in enumerate(st.session_state.cad_bars):
+                with bcols[i%4]:
+                    st.markdown(f"**Bara {i+1}**")
+                    n1s=st.selectbox("De la",node_names_m,index=node_names_m.index(br["n1"]) if br["n1"] in node_names_m else 0,key=f"cad_bn1_{i}")
+                    n2s=st.selectbox("La",node_names_m,index=node_names_m.index(br["n2"]) if br["n2"] in node_names_m else min(1,len(node_names_m)-1),key=f"cad_bn2_{i}")
+                    bars_ed_m.append({"n1":n1s,"n2":n2s})
+            st.session_state.cad_bars=bars_ed_m
+
+        # Common: read from session state
+        nodes=st.session_state.cad_nodes
+        node_names=[n["name"] for n in nodes]
+        bars_ed=st.session_state.cad_bars
 
         # === REAZEME ===
         st.subheader("3. Reazeme")
@@ -1401,8 +1633,6 @@ elif modul == "Statica 1 — Static Determinate":
 
         # Grad static
         total_r=sum([2 if s["tip"]==1 else 1 if s["tip"]==2 else 3 if s["tip"]==3 else 0 for s in sup_ed])
-        has_hinge = False
-        hinge_node = None
         n_eq=3
         G_val=total_r-n_eq
         if G_val==0: st.success(f"Static determinat -- {total_r} reactiuni, {n_eq} ecuatii")
@@ -1459,68 +1689,80 @@ elif modul == "Statica 1 — Static Determinate":
                         forces_ed.append({"tip":"M","node":fn,"Fx":0.0,"Fy":0.0,"M":fm})
         st.session_state.cad_forces=forces_ed
 
-        # === CALCUL ===
+        # === CALCUL (anastruct) ===
         def get_node(name):
             for n in nodes:
                 if n["name"]==name: return n["x"],n["y"]
             return 0.0,0.0
 
-        Fext={n["name"]:{"Fx":0.0,"Fy":0.0,"M":0.0} for n in nodes}
-        for fc in forces_ed:
-            nd=fc["node"]
-            if nd in Fext:
-                Fext[nd]["Fx"]+=fc["Fx"]; Fext[nd]["Fy"]+=fc["Fy"]; Fext[nd]["M"]+=fc["M"]
+        # Build anastruct model
+        ss_cad=SystemElements()
+        # Map node names to anastruct node IDs
+        cad_node_id={}  # node_name -> anastruct node_id
+        cad_elem_id={}  # bar_index -> anastruct element_id
+        for i_br,br in enumerate(bars_ed):
+            x1b,y1b=get_node(br["n1"]); x2b,y2b=get_node(br["n2"])
+            eid=ss_cad.add_element(location=[[x1b,y1b],[x2b,y2b]])
+            cad_elem_id[i_br]=eid
+            el=ss_cad.element_map[eid]
+            cad_node_id[br["n1"]]=el.node_id1
+            cad_node_id[br["n2"]]=el.node_id2
 
-        # Contributia incarcarilor distribuite ca forte nodale echivalente
+        # Supports
+        for sp in sup_ed:
+            nid=cad_node_id.get(sp["node"])
+            if nid is None: continue
+            if sp["tip"]==1: ss_cad.add_support_hinged(node_id=nid)
+            elif sp["tip"]==2: ss_cad.add_support_roll(node_id=nid)
+            elif sp["tip"]==3: ss_cad.add_support_fixed(node_id=nid)
+
+        # Distributed loads
         for qd in qdist_ed:
             if qd["bar"]>=len(bars_ed): continue
-            br=bars_ed[qd["bar"]]
-            x1b,y1b=get_node(br["n1"]); x2b,y2b=get_node(br["n2"])
-            dxb,dyb=x2b-x1b,y2b-y1b; Lb=np.sqrt(dxb**2+dyb**2)
-            if Lb<1e-9: continue
-            cb,sb=dxb/Lb,dyb/Lb
+            eid=cad_elem_id[qd["bar"]]
             qv=qd["q"]
             if "Perpendicular" in qd["dir"]:
-                qfx=qv*sb; qfy=-qv*cb
+                ss_cad.q_load(element_id=eid, q=-qv)
             elif "in jos" in qd["dir"]:
-                qfx=0.0; qfy=-qv
+                ss_cad.q_load(element_id=eid, q=-qv, direction="y")
             else:
-                qfx=0.0; qfy=qv
-            Fext[br["n1"]]["Fx"]+=qfx*Lb/2; Fext[br["n1"]]["Fy"]+=qfy*Lb/2
-            Fext[br["n2"]]["Fx"]+=qfx*Lb/2; Fext[br["n2"]]["Fy"]+=qfy*Lb/2
+                ss_cad.q_load(element_id=eid, q=qv, direction="y")
 
-        # Sistem de ecuatii
-        unknowns=[]
-        for sp in sup_ed:
-            if sp["tip"]==1: unknowns.append((sp["node"],"Fx")); unknowns.append((sp["node"],"Fy"))
-            elif sp["tip"]==2: unknowns.append((sp["node"],"Fy"))
-            elif sp["tip"]==3: unknowns.append((sp["node"],"Fx")); unknowns.append((sp["node"],"Fy")); unknowns.append((sp["node"],"M"))
-        n_unk=len(unknowns)
-        ref_x,ref_y=get_node(sup_ed[0]["node"]) if sup_ed else (0.0,0.0)
-        A_mat=np.zeros((n_eq,n_unk)); b_vec=np.zeros(n_eq)
+        # Point loads and moments
+        for fc in forces_ed:
+            nid=cad_node_id.get(fc["node"])
+            if nid is None: continue
+            if fc["tip"]=="F":
+                if abs(fc["Fx"])>1e-9: ss_cad.point_load(node_id=nid, Fx=fc["Fx"])
+                if abs(fc["Fy"])>1e-9: ss_cad.point_load(node_id=nid, Fy=fc["Fy"])
+            elif fc["tip"]=="M" and abs(fc["M"])>1e-9:
+                ss_cad.moment_load(node_id=nid, Ty=fc["M"])
 
-        sumFx_ext=sum(Fext[n]["Fx"] for n in Fext)
-        sumFy_ext=sum(Fext[n]["Fy"] for n in Fext)
-        sumM_ext=sum(Fext[n]["M"]+Fext[n]["Fy"]*(get_node(n)[0]-ref_x)-Fext[n]["Fx"]*(get_node(n)[1]-ref_y) for n in Fext)
-        b_vec[0]=-sumFx_ext; b_vec[1]=-sumFy_ext; b_vec[2]=-sumM_ext
-
-        for j,(nd,comp) in enumerate(unknowns):
-            xn,yn=get_node(nd)
-            if comp=="Fx": A_mat[0,j]=1.0; A_mat[2,j]=-(yn-ref_y)
-            elif comp=="Fy": A_mat[1,j]=1.0; A_mat[2,j]=(xn-ref_x)
-            elif comp=="M": A_mat[2,j]=1.0
-
+        # Solve
         reactions={}; solved=False
-        if n_unk==n_eq and n_unk>0:
-            try:
-                sol=np.linalg.solve(A_mat,b_vec); solved=True
-                for j,(nd,comp) in enumerate(unknowns):
-                    if nd not in reactions: reactions[nd]={"Fx":0.0,"Fy":0.0,"M":0.0}
-                    reactions[nd][comp]=sol[j]
-            except np.linalg.LinAlgError:
-                st.error("Sistem singular!")
-        elif n_unk!=n_eq:
-            st.error(f"Necunoscute ({n_unk}) != ecuatii ({n_eq})")
+        sumFx_ext=0.0; sumFy_ext=0.0
+        try:
+            ss_cad.solve()
+            solved=True
+            # Extract reactions at support nodes
+            for sp in sup_ed:
+                nid=cad_node_id.get(sp["node"])
+                if nid is None: continue
+                r=ss_cad.get_node_results_system(node_id=nid)
+                reactions[sp["node"]]={"Fx":float(r["Fx"]),"Fy":float(r["Fy"]),"M":float(r["Tz"])}
+            # Compute external force sums for equilibrium check
+            for fc in forces_ed:
+                if fc["tip"]=="F":
+                    sumFx_ext+=fc["Fx"]; sumFy_ext+=fc["Fy"]
+            for qd in qdist_ed:
+                if qd["bar"]>=len(bars_ed): continue
+                br=bars_ed[qd["bar"]]
+                x1b,y1b=get_node(br["n1"]); x2b,y2b=get_node(br["n2"])
+                Lb=np.sqrt((x2b-x1b)**2+(y2b-y1b)**2)
+                if "in sus" in qd["dir"]: sumFy_ext+=qd["q"]*Lb
+                else: sumFy_ext-=qd["q"]*Lb
+        except Exception as ex:
+            st.error(f"Eroare la rezolvare: {ex}")
 
         # === PASUL 1: SCHEMA ===
         st.markdown("### Pasul 1 -- Schema Cadrului")
@@ -1539,10 +1781,6 @@ elif modul == "Statica 1 — Static Determinate":
             if sp["tip"]==1: draw_pin(ax_s,xn,yn,sc)
             elif sp["tip"]==2: draw_roller(ax_s,xn,yn,sc)
             elif sp["tip"]==3: draw_fixed_bottom(ax_s,xn,yn,size=sc)
-        if has_hinge:
-            xh,yh=get_node(hinge_node)
-            ax_s.plot(xh,yh,"ko",ms=12,zorder=7); ax_s.plot(xh,yh,"wo",ms=6,zorder=8)
-            ax_s.text(xh+sc*1.5,yh+sc*1.5,f"{hinge_node}\n(M=0)",fontsize=9,color="navy",fontweight="bold")
         for qd in qdist_ed:
             if qd["bar"]>=len(bars_ed): continue
             br=bars_ed[qd["bar"]]
@@ -1610,41 +1848,16 @@ elif modul == "Statica 1 — Static Determinate":
 
             # === PASUL 3: DIAGRAME N, T, M ===
             st.markdown("### Pasul 3 -- Diagrame N, T, M")
-            npts=200
 
             all_bars_ntm=[]
-            for br in bars_ed:
+            for i_br,br in enumerate(bars_ed):
                 x1b,y1b=get_node(br["n1"]); x2b,y2b=get_node(br["n2"])
-                dxb,dyb=x2b-x1b,y2b-y1b; Lb=np.sqrt(dxb**2+dyb**2)
-                if Lb<1e-9:
-                    all_bars_ntm.append({"n1":br["n1"],"n2":br["n2"],"x1":x1b,"y1":y1b,"x2":x2b,"y2":y2b,"N":np.zeros(npts),"T":np.zeros(npts),"M":np.zeros(npts)})
-                    continue
-                cb,sb=dxb/Lb,dyb/Lb
-                s_arr=np.linspace(0,Lb,npts)
-                N_arr=np.zeros(npts); T_arr=np.zeros(npts); M_arr=np.zeros(npts)
-
-                q_perp_x=0.0; q_perp_y=0.0
-                for qd in qdist_ed:
-                    if qd["bar"]<len(bars_ed) and bars_ed[qd["bar"]]["n1"]==br["n1"] and bars_ed[qd["bar"]]["n2"]==br["n2"]:
-                        if "Perpendicular" in qd["dir"]:
-                            q_perp_x+=qd["q"]*sb; q_perp_y+=-qd["q"]*cb
-                        elif "in jos" in qd["dir"]:
-                            q_perp_y+=-qd["q"]
-                        else:
-                            q_perp_y+=qd["q"]
-
-                # Forte la capatul n1: reactiuni + forte externe
-                Fx_n1=Fext.get(br["n1"],{}).get("Fx",0.0)+reactions.get(br["n1"],{}).get("Fx",0.0)
-                Fy_n1=Fext.get(br["n1"],{}).get("Fy",0.0)+reactions.get(br["n1"],{}).get("Fy",0.0)
-                M_n1=Fext.get(br["n1"],{}).get("M",0.0)+reactions.get(br["n1"],{}).get("M",0.0)
-
-                for i_s,s in enumerate(s_arr):
-                    Fx_tot=Fx_n1+q_perp_x*s
-                    Fy_tot=Fy_n1+q_perp_y*s
-                    N_arr[i_s]=Fx_tot*cb+Fy_tot*sb
-                    T_arr[i_s]=-Fx_tot*sb+Fy_tot*cb
-                    M_arr[i_s]=M_n1+Fy_n1*s*cb-Fx_n1*s*sb+(q_perp_y*cb-q_perp_x*sb)*s**2/2
-
+                eid=cad_elem_id[i_br]
+                el=ss_cad.element_map[eid]
+                npts=len(el.bending_moment)
+                N_arr=np.linspace(el.N_1,el.N_2,npts)
+                T_arr=np.array(el.shear_force)
+                M_arr=np.array(el.bending_moment)
                 all_bars_ntm.append({"n1":br["n1"],"n2":br["n2"],"x1":x1b,"y1":y1b,"x2":x2b,"y2":y2b,
                                      "N":N_arr,"T":T_arr,"M":M_arr})
 
@@ -1667,9 +1880,6 @@ elif modul == "Statica 1 — Static Determinate":
                     xn,yn=get_node(sp["node"])
                     if sp["tip"]==1: draw_pin(ax,xn,yn,sc*0.5)
                     elif sp["tip"]==2: draw_roller(ax,xn,yn,sc*0.5)
-                if has_hinge:
-                    xh,yh=get_node(hinge_node)
-                    ax.plot(xh,yh,"ko",ms=8,zorder=7); ax.plot(xh,yh,"wo",ms=4,zorder=8)
                 for nd in nodes:
                     ax.plot(nd["x"],nd["y"],"ko",ms=4,zorder=6)
                 ax.set_aspect("equal"); ax.axis("off")
@@ -1689,12 +1899,6 @@ elif modul == "Statica 1 — Static Determinate":
             with st.expander("Valori Caracteristice"):
                 for b in all_bars_ntm:
                     st.markdown(f"**Bara {b['n1']}-{b['n2']}:** N=[{np.min(b['N']):.3f}, {np.max(b['N']):.3f}] | T=[{np.min(b['T']):.3f}, {np.max(b['T']):.3f}] | M=[{np.min(b['M']):.3f}, {np.max(b['M']):.3f}]")
-                if has_hinge:
-                    for b in all_bars_ntm:
-                        if b["n2"]==hinge_node:
-                            st.markdown(f"**M la articulatia {hinge_node} (bara {b['n1']}-{b['n2']}):** {b['M'][-1]:.4f} kNm")
-                        elif b["n1"]==hinge_node:
-                            st.markdown(f"**M la articulatia {hinge_node} (bara {b['n1']}-{b['n2']}):** {b['M'][0]:.4f} kNm")
 
     # ---- ARC ----
     elif tip_struct=="Arc cu 3 Articulații":
