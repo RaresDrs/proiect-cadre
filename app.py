@@ -233,103 +233,115 @@ st.sidebar.markdown("<small style='color:#aaa;'>Bazat pe manuale / îndrumătoar
 # MODUL 1: CALCUL 2D GRINZI
 # ============================================================
 if modul == "Calcul Grinzi simplu":
-    st.title("Calcul Grinzi simplu")
-    st.markdown("---")
+    # ── 2-column workspace ──────────────────────────────────────
+    col_panel, col_canvas = st.columns([1.4, 3.6], gap="large")
 
-    # --- SIDEBAR: GEOMETRIE + SECTIUNE + MATERIAL ---
-    if "gv_L" not in st.session_state: st.session_state.gv_L=6.0
-    if "gv_A" not in st.session_state: st.session_state.gv_A=0.0
-    def _gL(): st.session_state.gv_L=st.session_state.gv_Lsl
-    def _gLn(): st.session_state.gv_L=st.session_state.gv_Lni
-    def _gA(): st.session_state.gv_A=float(st.session_state.gv_Asl)
-    def _gAn(): st.session_state.gv_A=float(st.session_state.gv_Ani)
-    st.sidebar.header("1. Geometrie")
-    st.sidebar.slider("Lungime (m)",0.5,30.0,float(st.session_state.gv_L),0.5,key="gv_Lsl",on_change=_gL)
-    L=st.sidebar.number_input("Lungime (m)",value=float(st.session_state.gv_L),min_value=0.5,key="gv_Lni",on_change=_gLn,label_visibility="visible")
-    st.sidebar.slider("Înclinare (°)",0.0,85.0,float(st.session_state.gv_A),1.0,key="gv_Asl",on_change=_gA)
-    theta_deg=st.sidebar.number_input("Unghi (°)",value=float(st.session_state.gv_A),min_value=0.0,max_value=85.0,key="gv_Ani",on_change=_gAn)
-    th=np.radians(theta_deg); c_ang,s_ang=np.cos(th),np.sin(th)
-    end_x,end_y=L*c_ang,L*s_ang
+    # ── LEFT PANEL ───────────────────────────────────────────────
+    with col_panel:
+        st.markdown("<h3 style='margin-top:0; margin-bottom:12px;'>🎛️ Panou Control</h3>", unsafe_allow_html=True)
+        tab_geom, tab_sup, tab_load = st.tabs(["📐 Geometrie", "🔩 Reazeme", "⬇️ Încărcări"])
 
-    st.sidebar.header("2. Secțiune")
-    b_cm=st.sidebar.number_input("Lățime b (cm)",min_value=1.0,value=30.0,key="gv_b")
-    h_cm=st.sidebar.number_input("Înălțime h (cm)",min_value=1.0,value=50.0,key="gv_h")
-    b_m,h_m=b_cm/100,h_cm/100; A_sec=b_m*h_m; I_sec=b_m*h_m**3/12
-    st.sidebar.latex(rf"A={A_sec*1e4:.1f}\text{{cm}}^2,\quad I={to_sci(I_sec)}\text{{m}}^4")
+        # ── TAB 1: Geometrie + Secțiune + Material ───────────────
+        with tab_geom:
+            if "gv_L" not in st.session_state: st.session_state.gv_L=6.0
+            if "gv_A" not in st.session_state: st.session_state.gv_A=0.0
+            def _gL(): st.session_state.gv_L=st.session_state.gv_Lsl
+            def _gLn(): st.session_state.gv_L=st.session_state.gv_Lni
+            def _gA(): st.session_state.gv_A=float(st.session_state.gv_Asl)
+            def _gAn(): st.session_state.gv_A=float(st.session_state.gv_Ani)
 
-    st.sidebar.header("3. Material")
-    mat=st.sidebar.selectbox("Material",["Beton C20/25","Beton C25/30","Beton C30/37","Beton C35/45","Oțel S235","Oțel S275","Oțel S355"],key="gv_mat")
-    E={"Beton C20/25":30e6,"Beton C25/30":31e6,"Beton C30/37":33e6,"Beton C35/45":34e6,"Oțel S235":210e6,"Oțel S275":210e6,"Oțel S355":210e6}[mat]
+            st.markdown("#### 1. Geometrie")
+            st.slider("Lungime (m)",0.5,30.0,float(st.session_state.gv_L),0.5,key="gv_Lsl",on_change=_gL)
+            L=st.number_input("Lungime exactă (m)",value=float(st.session_state.gv_L),min_value=0.5,key="gv_Lni",on_change=_gLn)
+            st.slider("Înclinare (°)",0.0,85.0,float(st.session_state.gv_A),1.0,key="gv_Asl",on_change=_gA)
+            theta_deg=st.number_input("Unghi (°)",value=float(st.session_state.gv_A),min_value=0.0,max_value=85.0,key="gv_Ani",on_change=_gAn)
 
-    # --- REAZEME la distante personalizate ---
-    st.subheader("Reazeme")
-    ro_lbl={0:"Liber",1:"Articulație (pin)",2:"Reazem simplu (roller)",3:"Încastrare (fixed)"}
-    if "gv_sup" not in st.session_state:
-        st.session_state.gv_sup=[{"x":0.0,"tip":1},{"x":float(L),"tip":2}]
-    cs_btn=st.columns([1,1,4])
-    if cs_btn[0].button("＋ Adaugă reazem",key="gv_sadd"):
-        st.session_state.gv_sup.append({"x":float(L)/2,"tip":2})
-    if cs_btn[1].button("－ Șterge ultimul",key="gv_sdel"):
-        if len(st.session_state.gv_sup)>1: st.session_state.gv_sup.pop()
-    sup_edited=[]
-    n_sup=len(st.session_state.gv_sup)
-    sup_cols=st.columns(min(n_sup,4))
-    for i,s in enumerate(st.session_state.gv_sup):
-        with sup_cols[i%4]:
-            tip_idx=[0,1,2,3].index(s["tip"]) if s["tip"] in [0,1,2,3] else 1
-            t=st.selectbox(f"Tip reazem {i+1}",[0,1,2,3],index=tip_idx,format_func=lambda x:ro_lbl[x],key=f"gv_st_{i}")
-            xpos=st.number_input(f"Poziție x{i+1} (m)",min_value=0.0,max_value=float(L),value=float(np.clip(s["x"],0,L)),step=0.5,key=f"gv_sx_{i}")
-            sup_edited.append({"x":xpos,"tip":t})
-    st.session_state.gv_sup=sup_edited
-    # Static determinacy
-    total_r=sum([2 if s["tip"]==1 else 1 if s["tip"]==2 else 3 if s["tip"]==3 else 0 for s in st.session_state.gv_sup])
-    G_val=total_r-3
-    if G_val==0: st.success(f"Structură **static determinată** (ns=0) — {total_r} reacțiuni, 3 ecuații")
-    elif G_val>0: st.warning(f"**Static nedeterminată** ns={G_val} — {total_r} reacțiuni")
-    else: st.error(f"**MECANISM!** G={G_val} — structura instabilă")
+            st.markdown("#### 2. Secțiune")
+            b_cm=st.number_input("Lățime b (cm)",min_value=1.0,value=30.0,key="gv_b")
+            h_cm=st.number_input("Înălțime h (cm)",min_value=1.0,value=50.0,key="gv_h")
+            b_m,h_m=b_cm/100,h_cm/100; A_sec=b_m*h_m; I_sec=b_m*h_m**3/12
+            st.latex(rf"A={A_sec*1e4:.1f}\text{{cm}}^2,\quad I={to_sci(I_sec)}\text{{m}}^4")
 
-    # --- INCARCARI ---
-    st.subheader("Încărcări distribuite q")
-    qc1,qc2,qc3,qc4=st.columns(4)
-    q_abs=qc1.number_input("q (kN/m)",min_value=0.0,value=0.0,step=1.0,key="gv_qabs")
-    q_dir=qc2.selectbox("Direcție q",["↓ Jos (−y local)","↑ Sus (+y local)"],key="gv_qdir")
-    q_down=(q_dir=="↓ Jos (−y local)")
-    q_eff=q_abs if q_down else -q_abs   # sign for FEM (positive = down in local y)
-    q_start=qc3.number_input("De la x (m)",min_value=0.0,max_value=float(L),value=0.0,step=0.5,key="gv_qx1")
-    q_end=qc4.number_input("Până la x (m)",min_value=0.0,max_value=float(L),value=float(L),step=0.5,key="gv_qx2")
+            st.markdown("#### 3. Material")
+            mat=st.selectbox("Material",["Beton C20/25","Beton C25/30","Beton C30/37","Beton C35/45","Oțel S235","Oțel S275","Oțel S355"],key="gv_mat")
+            E={"Beton C20/25":30e6,"Beton C25/30":31e6,"Beton C30/37":33e6,"Beton C35/45":34e6,"Oțel S235":210e6,"Oțel S275":210e6,"Oțel S355":210e6}[mat]
 
-    st.subheader("Forțe concentrate și momente")
-    if "gv_forces" not in st.session_state: st.session_state.gv_forces=[]
-    fa,fb=st.columns([1,5])
-    with fa:
-        if st.button("＋ Încărcare",key="gv_fadd"): st.session_state.gv_forces.append({"tip":"F","axa":"Y","F":-10.0,"alpha":0.0,"dist":float(L)/2})
-        if st.button("－ Șterge ultima",key="gv_fdel"):
-            if st.session_state.gv_forces: st.session_state.gv_forces.pop()
-    f_edited=[]
-    if st.session_state.gv_forces:
-        fcols=st.columns(min(len(st.session_state.gv_forces),3))
-        for i,f in enumerate(st.session_state.gv_forces):
-            with fcols[i%3]:
-                st.markdown(f"**Încărcarea {i+1}**")
-                tip=st.selectbox("Tip",["Forță","Moment concentrat"],index=0 if f["tip"]=="F" else 1,key=f"gv_ft_{i}")
-                tip_k="F" if tip=="Forță" else "M"
-                if tip_k=="F":
-                    axa_def=f.get("axa","Y")
-                    axa=st.selectbox("Axă",["X","Y"],index=0 if axa_def=="X" else 1,key=f"gv_faxa_{i}")
-                    if axa=="X":
-                        F_val=st.number_input("F (kN)  [ + → dreapta  |  − → stânga ]",value=float(f.get("F",10.0) if f.get("axa","Y")=="X" else 10.0),step=1.0,key=f"gv_fF_{i}")
+        # compute geometry (needed by all tabs)
+        th=np.radians(theta_deg); c_ang,s_ang=np.cos(th),np.sin(th)
+        end_x,end_y=L*c_ang,L*s_ang
+
+        # ── TAB 2: Reazeme ────────────────────────────────────────
+        with tab_sup:
+            st.markdown("#### Setări Reazeme")
+            ro_lbl={0:"Liber",1:"Articulație (pin)",2:"Reazem simplu (roller)",3:"Încastrare (fixed)"}
+            if "gv_sup" not in st.session_state:
+                st.session_state.gv_sup=[{"x":0.0,"tip":1},{"x":float(L),"tip":2}]
+            cs_btn=st.columns([1,1])
+            if cs_btn[0].button("＋ Reazem",key="gv_sadd"):
+                st.session_state.gv_sup.append({"x":float(L)/2,"tip":2})
+            if cs_btn[1].button("－ Șterge",key="gv_sdel"):
+                if len(st.session_state.gv_sup)>1: st.session_state.gv_sup.pop()
+            sup_edited=[]
+            for i,s in enumerate(st.session_state.gv_sup):
+                st.markdown(f"**Reazem {i+1}**")
+                rc1,rc2=st.columns(2)
+                tip_idx=[0,1,2,3].index(s["tip"]) if s["tip"] in [0,1,2,3] else 1
+                t=rc1.selectbox("Tip",[0,1,2,3],index=tip_idx,format_func=lambda x:ro_lbl[x],key=f"gv_st_{i}")
+                xpos=rc2.number_input("x (m)",min_value=0.0,max_value=float(L),value=float(np.clip(s["x"],0,L)),step=0.5,key=f"gv_sx_{i}")
+                sup_edited.append({"x":xpos,"tip":t})
+            st.session_state.gv_sup=sup_edited
+            total_r=sum([2 if s["tip"]==1 else 1 if s["tip"]==2 else 3 if s["tip"]==3 else 0 for s in st.session_state.gv_sup])
+            G_val=total_r-3
+            if G_val==0: st.success(f"Static determinată (ns=0) — {total_r} reacțiuni")
+            elif G_val>0: st.warning(f"Nedeterminată ns={G_val} — {total_r} reacțiuni")
+            else: st.error(f"MECANISM! G={G_val}")
+
+        # ── TAB 3: Încărcări ──────────────────────────────────────
+        with tab_load:
+            st.markdown("#### Distribuită (q)")
+            qc1,qc2=st.columns(2)
+            q_abs=qc1.number_input("q (kN/m)",min_value=0.0,value=0.0,step=1.0,key="gv_qabs")
+            q_dir=qc2.selectbox("Direcție",["↓ Jos","↑ Sus"],key="gv_qdir")
+            q_down=(q_dir=="↓ Jos")
+            q_eff=q_abs if q_down else -q_abs
+            qc3,qc4=st.columns(2)
+            q_start=qc3.number_input("De la x (m)",min_value=0.0,max_value=float(L),value=0.0,step=0.5,key="gv_qx1")
+            q_end=qc4.number_input("Până la x (m)",min_value=0.0,max_value=float(L),value=float(L),step=0.5,key="gv_qx2")
+
+            st.markdown("#### Forțe concentrate")
+            if "gv_forces" not in st.session_state: st.session_state.gv_forces=[]
+            fa,fb=st.columns(2)
+            if fa.button("＋ Forță",key="gv_fadd"): st.session_state.gv_forces.append({"tip":"F","axa":"Y","F":-10.0,"alpha":0.0,"dist":float(L)/2})
+            if fb.button("－ Șterge ultima",key="gv_fdel"):
+                if st.session_state.gv_forces: st.session_state.gv_forces.pop()
+            f_edited=[]
+            for i,f in enumerate(st.session_state.gv_forces):
+                with st.expander(f"Încărcarea {i+1}", expanded=True):
+                    tip=st.selectbox("Tip",["Forță","Moment concentrat"],index=0 if f["tip"]=="F" else 1,key=f"gv_ft_{i}")
+                    tip_k="F" if tip=="Forță" else "M"
+                    if tip_k=="F":
+                        axa_def=f.get("axa","Y")
+                        axa=st.selectbox("Axă",["X","Y"],index=0 if axa_def=="X" else 1,key=f"gv_faxa_{i}")
+                        if axa=="X":
+                            F_val=st.number_input("F (kN) [+→dreapta]",value=float(f.get("F",10.0) if f.get("axa","Y")=="X" else 10.0),step=1.0,key=f"gv_fF_{i}")
+                        else:
+                            F_val=st.number_input("F (kN) [+→sus]",value=float(f.get("F",-10.0) if f.get("axa","Y")=="Y" else -10.0),step=1.0,key=f"gv_fF_{i}")
+                        al=st.number_input("Unghi α (°)",value=float(f.get("alpha",0.0)),min_value=-90.0,max_value=90.0,step=5.0,key=f"gv_fal_{i}")
+                        d=st.number_input("Poziție x (m)",0.0,float(L),float(np.clip(f.get("dist",L/2),0,L)),step=0.5,key=f"gv_fd_{i}")
+                        fx_show,fy_show=_force_xy({"axa":axa,"F":F_val,"alpha":al})
+                        st.caption(f"Fx={fx_show:.2f} kN | Fy={fy_show:.2f} kN")
+                        f_edited.append({"tip":"F","axa":axa,"F":F_val,"alpha":al,"dist":d})
                     else:
-                        F_val=st.number_input("F (kN)  [ + → sus  |  − → jos ]",value=float(f.get("F",-10.0) if f.get("axa","Y")=="Y" else -10.0),step=1.0,key=f"gv_fF_{i}")
-                    al=st.number_input("Unghi față de axă α (°)",value=float(f.get("alpha",0.0)),min_value=-90.0,max_value=90.0,step=5.0,key=f"gv_fal_{i}")
-                    d=st.number_input("Poziție x (m)",0.0,float(L),float(np.clip(f.get("dist",L/2),0,L)),step=0.5,key=f"gv_fd_{i}")
-                    fx_show,fy_show=_force_xy({"axa":axa,"F":F_val,"alpha":al})
-                    st.caption(f"→ Fx={fx_show:.2f} kN | Fy={fy_show:.2f} kN")
-                    f_edited.append({"tip":"F","axa":axa,"F":F_val,"alpha":al,"dist":d})
-                else:
-                    Mval=st.number_input("M (kNm) — + antiorar",value=float(f.get("val",5.0)),step=1.0,key=f"gv_fM_{i}")
-                    d=st.number_input("Poziție x (m)",0.0,float(L),float(np.clip(f.get("dist",L/2),0,L)),step=0.5,key=f"gv_fd2_{i}")
-                    f_edited.append({"tip":"M","val":Mval,"dist":d})
-        st.session_state.gv_forces=f_edited
+                        Mval=st.number_input("M (kNm)",value=float(f.get("val",5.0)),step=1.0,key=f"gv_fM_{i}")
+                        d=st.number_input("Poziție x (m)",0.0,float(L),float(np.clip(f.get("dist",L/2),0,L)),step=0.5,key=f"gv_fd2_{i}")
+                        f_edited.append({"tip":"M","val":Mval,"dist":d})
+            st.session_state.gv_forces=f_edited
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        btn_calc = st.button("▶ Efectuează Calculul", type="primary", use_container_width=True, key="gv_calc")
+
+    # ── RIGHT CANVAS ─────────────────────────────────────────────
+    with col_canvas:
 
     # --- SCHIȚĂ ---
     ss=max(0.18,L*0.03)
