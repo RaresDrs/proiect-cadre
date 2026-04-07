@@ -343,594 +343,594 @@ if modul == "Calcul Grinzi simplu":
     # ── RIGHT CANVAS ─────────────────────────────────────────────
     with col_canvas:
 
-    # --- SCHIȚĂ ---
-    ss=max(0.18,L*0.03)
-    _dim_drop=max(0.9,L*0.15)   # how far below beam the dimension line sits
-    _tick_h=_dim_drop*0.18      # short tick height at dim-line ends
+        # --- SCHIȚĂ ---
+        ss=max(0.18,L*0.03)
+        _dim_drop=max(0.9,L*0.15)   # how far below beam the dimension line sits
+        _tick_h=_dim_drop*0.18      # short tick height at dim-line ends
 
-    def _draw_dim_line(ax,x1_g,y1_g,x2_g,y2_g,label,drop,tick_h,color="#555",above=True):
-        """Dimension line parallel to beam. above=True → above bar, above=False → below bar."""
-        nx,ny=(-s_ang,c_ang) if above else (s_ang,-c_ang)
-        ax.plot([x1_g,x1_g+nx*drop],[y1_g,y1_g+ny*drop],color=color,lw=0.7,ls=":",zorder=2)
-        ax.plot([x2_g,x2_g+nx*drop],[y2_g,y2_g+ny*drop],color=color,lw=0.7,ls=":",zorder=2)
-        ox1=x1_g+nx*drop; oy1=y1_g+ny*drop
-        ox2=x2_g+nx*drop; oy2=y2_g+ny*drop
-        ax.annotate("",xy=(ox1,oy1),xytext=(ox2,oy2),
-                    arrowprops=dict(arrowstyle="<->",color=color,lw=1.0,mutation_scale=10),zorder=3)
-        mx=(ox1+ox2)/2+nx*tick_h*1.4; my=(oy1+oy2)/2+ny*tick_h*1.4
-        ax.text(mx,my,label,fontsize=8,ha="center",va="center",color=color,fontweight="bold",
-                bbox=dict(fc="white",alpha=0.88,ec="none",pad=1.2))
+        def _draw_dim_line(ax,x1_g,y1_g,x2_g,y2_g,label,drop,tick_h,color="#555",above=True):
+            """Dimension line parallel to beam. above=True → above bar, above=False → below bar."""
+            nx,ny=(-s_ang,c_ang) if above else (s_ang,-c_ang)
+            ax.plot([x1_g,x1_g+nx*drop],[y1_g,y1_g+ny*drop],color=color,lw=0.7,ls=":",zorder=2)
+            ax.plot([x2_g,x2_g+nx*drop],[y2_g,y2_g+ny*drop],color=color,lw=0.7,ls=":",zorder=2)
+            ox1=x1_g+nx*drop; oy1=y1_g+ny*drop
+            ox2=x2_g+nx*drop; oy2=y2_g+ny*drop
+            ax.annotate("",xy=(ox1,oy1),xytext=(ox2,oy2),
+                        arrowprops=dict(arrowstyle="<->",color=color,lw=1.0,mutation_scale=10),zorder=3)
+            mx=(ox1+ox2)/2+nx*tick_h*1.4; my=(oy1+oy2)/2+ny*tick_h*1.4
+            ax.text(mx,my,label,fontsize=8,ha="center",va="center",color=color,fontweight="bold",
+                    bbox=dict(fc="white",alpha=0.88,ec="none",pad=1.2))
 
-    fig1,ax1=plt.subplots(figsize=(12,max(4.5,end_y+_dim_drop*2+2.5)),dpi=150)
+        fig1,ax1=plt.subplots(figsize=(12,max(4.5,end_y+_dim_drop*2+2.5)),dpi=150)
 
-    # Beam
-    ax1.plot([0,end_x],[0,end_y],"k-",lw=7,zorder=3,solid_capstyle="round",
-             path_effects=None)
+        # Beam
+        ax1.plot([0,end_x],[0,end_y],"k-",lw=7,zorder=3,solid_capstyle="round",
+                 path_effects=None)
 
-    # Draw supports + node labels
-    node_labels=["A","B","C","D","E","F"]
-    sup_xs=sorted(st.session_state.gv_sup,key=lambda s:s["x"])
-    for idx,s in enumerate(st.session_state.gv_sup):
-        sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
-        lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
-        if s["tip"]==1:
-            draw_pin(ax1,sx_g,sy_g,ss)
-            ax1.text(sx_g-ss*1.2,sy_g-ss*1.5,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
-                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.2"))
-        elif s["tip"]==2:
-            draw_roller(ax1,sx_g,sy_g,ss)
-            ax1.text(sx_g-ss*1.2,sy_g-ss*2.2,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
-                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.2"))
-        elif s["tip"]==3:
-            draw_fixed_bottom(ax1,sx_g,sy_g,c_ang,s_ang,ss)
-            ax1.text(sx_g-c_ang*ss*1.2-ss*1.0,sy_g-s_ang*ss*1.2-ss*1.0,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
-                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.2"))
+        # Draw supports + node labels
+        node_labels=["A","B","C","D","E","F"]
+        sup_xs=sorted(st.session_state.gv_sup,key=lambda s:s["x"])
+        for idx,s in enumerate(st.session_state.gv_sup):
+            sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
+            lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
+            if s["tip"]==1:
+                draw_pin(ax1,sx_g,sy_g,ss)
+                ax1.text(sx_g-ss*1.2,sy_g-ss*1.5,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                         ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.2"))
+            elif s["tip"]==2:
+                draw_roller(ax1,sx_g,sy_g,ss)
+                ax1.text(sx_g-ss*1.2,sy_g-ss*2.2,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                         ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.2"))
+            elif s["tip"]==3:
+                draw_fixed_bottom(ax1,sx_g,sy_g,c_ang,s_ang,ss)
+                ax1.text(sx_g-c_ang*ss*1.2-ss*1.0,sy_g-s_ang*ss*1.2-ss*1.0,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                         ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.8,boxstyle="round,pad=0.2"))
 
-    # Draw q perpendicular to bar (no label — label goes below beam separately)
-    if q_abs>0 and q_end>q_start:
-        draw_distributed_load_perp(ax1,q_start,q_end,c_ang,s_ang,q_abs,q_down)
+        # Draw q perpendicular to bar (no label — label goes below beam separately)
+        if q_abs>0 and q_end>q_start:
+            draw_distributed_load_perp(ax1,q_start,q_end,c_ang,s_ang,q_abs,q_down)
 
-    # Draw forces
-    arsc=max(0.55,L*0.1)
-    for f in st.session_state.gv_forces:
-        d=f.get("dist",0); fp=d*c_ang; fyp=d*s_ang
-        if f["tip"]=="F":
-            fx_g,fy_g=_force_xy(f)
-            mag=np.sqrt(fx_g**2+fy_g**2)
-            lbl=f"{abs(f.get('F',mag)):.0f}kN" if "axa" in f else f"{mag:.0f}kN"
-            draw_force_arrow(ax1,fp,fyp,fx_g,fy_g,lbl,color="#c00",scale=arsc)
-        else:
-            _Mv=f.get("val",0)
-            draw_moment_arc(ax1,fp,fyp,_Mv,r=ss*1.05,color="purple")
-            ax1.text(fp+ss*2.2,fyp+ss*0.6,f"M={_Mv:.0f}kNm",fontsize=8,color="purple",fontweight="bold",
-                     bbox=dict(fc="white",alpha=0.88,ec="purple",lw=0.5,pad=1.2,boxstyle="round,pad=0.2"))
+        # Draw forces
+        arsc=max(0.55,L*0.1)
+        for f in st.session_state.gv_forces:
+            d=f.get("dist",0); fp=d*c_ang; fyp=d*s_ang
+            if f["tip"]=="F":
+                fx_g,fy_g=_force_xy(f)
+                mag=np.sqrt(fx_g**2+fy_g**2)
+                lbl=f"{abs(f.get('F',mag)):.0f}kN" if "axa" in f else f"{mag:.0f}kN"
+                draw_force_arrow(ax1,fp,fyp,fx_g,fy_g,lbl,color="#c00",scale=arsc)
+            else:
+                _Mv=f.get("val",0)
+                draw_moment_arc(ax1,fp,fyp,_Mv,r=ss*1.05,color="purple")
+                ax1.text(fp+ss*2.2,fyp+ss*0.6,f"M={_Mv:.0f}kNm",fontsize=8,color="purple",fontweight="bold",
+                         bbox=dict(fc="white",alpha=0.88,ec="purple",lw=0.5,pad=1.2,boxstyle="round,pad=0.2"))
 
-    # ── COTARE (dimensioning lines) ──────────────────────────────
-    # Build sorted list of key x-positions (supports + ends)
-    key_xs=sorted(set([0.0,L]+[s["x"] for s in st.session_state.gv_sup]))
+        # ── COTARE (dimensioning lines) ──────────────────────────────
+        # Build sorted list of key x-positions (supports + ends)
+        key_xs=sorted(set([0.0,L]+[s["x"] for s in st.session_state.gv_sup]))
 
-    # q label below beam (between beam and L dimension)
-    if q_abs>0 and q_end>q_start:
-        _q_lbl_drop=_dim_drop*0.55
-        _q_mid=(q_start+q_end)/2
-        _q_lx=_q_mid*c_ang+s_ang*_q_lbl_drop; _q_ly=_q_mid*s_ang-c_ang*_q_lbl_drop
-        ax1.text(_q_lx,_q_ly,f"q = {q_abs:.1f} kN/m",fontsize=9,fontweight='bold',
-                 color='#2255cc',ha='center',va='center',
-                 bbox=dict(fc='white',alpha=0.9,ec='#2255cc',lw=0.6,boxstyle='round,pad=0.25'))
+        # q label below beam (between beam and L dimension)
+        if q_abs>0 and q_end>q_start:
+            _q_lbl_drop=_dim_drop*0.55
+            _q_mid=(q_start+q_end)/2
+            _q_lx=_q_mid*c_ang+s_ang*_q_lbl_drop; _q_ly=_q_mid*s_ang-c_ang*_q_lbl_drop
+            ax1.text(_q_lx,_q_ly,f"q = {q_abs:.1f} kN/m",fontsize=9,fontweight='bold',
+                     color='#2255cc',ha='center',va='center',
+                     bbox=dict(fc='white',alpha=0.9,ec='#2255cc',lw=0.6,boxstyle='round,pad=0.25'))
 
-    # 1) Overall L — jos față de bară (sub label-ul q)
-    _q_extra=max(0.8,q_abs*0.035+0.25)*1.3 if q_abs>0 else 0
-    _draw_dim_line(ax1,0,0,end_x,end_y,f"L = {L:.2f} m",
-                   _dim_drop*1.3+_q_extra,_tick_h,above=False)
+        # 1) Overall L — jos față de bară (sub label-ul q)
+        _q_extra=max(0.8,q_abs*0.035+0.25)*1.3 if q_abs>0 else 0
+        _draw_dim_line(ax1,0,0,end_x,end_y,f"L = {L:.2f} m",
+                       _dim_drop*1.3+_q_extra,_tick_h,above=False)
 
-    # 2) Segmente — sus față de bară
-    if len(key_xs)>2:
-        for i in range(len(key_xs)-1):
-            xa1=key_xs[i]*c_ang;   ya1=key_xs[i]*s_ang
-            xa2=key_xs[i+1]*c_ang; ya2=key_xs[i+1]*s_ang
-            seg_len=key_xs[i+1]-key_xs[i]
-            _draw_dim_line(ax1,xa1,ya1,xa2,ya2,f"{seg_len:.2f} m",
-                           _dim_drop*0.7,_tick_h,color="#4a6fa5",above=True)
+        # 2) Segmente — sus față de bară
+        if len(key_xs)>2:
+            for i in range(len(key_xs)-1):
+                xa1=key_xs[i]*c_ang;   ya1=key_xs[i]*s_ang
+                xa2=key_xs[i+1]*c_ang; ya2=key_xs[i+1]*s_ang
+                seg_len=key_xs[i+1]-key_xs[i]
+                _draw_dim_line(ax1,xa1,ya1,xa2,ya2,f"{seg_len:.2f} m",
+                               _dim_drop*0.7,_tick_h,color="#4a6fa5",above=True)
 
-    # Axes system (bottom-left corner)
-    draw_axes(ax1,min(0,end_x)-1.2,min(0,end_y)-0.3,length=0.7)
+        # Axes system (bottom-left corner)
+        draw_axes(ax1,min(0,end_x)-1.2,min(0,end_y)-0.3,length=0.7)
 
-    mg=max(L*0.22,1.5)
-    ax1.set_xlim(min(0,end_x)-mg, max(0,end_x)+mg)
-    ax1.set_ylim(min(0,end_y)-_dim_drop*1.8-mg*0.3-_q_extra, max(0,end_y)+_dim_drop*1.1+mg*0.5)
-    ax1.set_aspect("equal"); ax1.axis("off")
-    g_txt="static determinată" if G_val==0 else (f"nedeterminată ns={G_val}" if G_val>0 else "MECANISM")
-    ax1.set_title(f"θ = {theta_deg:.0f}°  |  L = {L:.1f} m",
-                  fontsize=11,fontweight="bold",pad=8)
-    st.pyplot(fig1); plt.close(fig1)
+        mg=max(L*0.22,1.5)
+        ax1.set_xlim(min(0,end_x)-mg, max(0,end_x)+mg)
+        ax1.set_ylim(min(0,end_y)-_dim_drop*1.8-mg*0.3-_q_extra, max(0,end_y)+_dim_drop*1.1+mg*0.5)
+        ax1.set_aspect("equal"); ax1.axis("off")
+        g_txt="static determinată" if G_val==0 else (f"nedeterminată ns={G_val}" if G_val>0 else "MECANISM")
+        ax1.set_title(f"θ = {theta_deg:.0f}°  |  L = {L:.1f} m",
+                      fontsize=11,fontweight="bold",pad=8)
+        st.pyplot(fig1); plt.close(fig1)
 
-    st.markdown("---")
-    if st.button("▶ Efectuează Calculul",type="primary",width="stretch",key="gv_calc"):
-        if A_sec==0: st.error("Introduceți secțiunea.")
-        elif G_val<0: st.error("Structura este un mecanism! Adaugă reazeme.")
-        else:
-            try:
-                # Build node list
-                raw_nodes=set([0.0,L])
-                for s in st.session_state.gv_sup: raw_nodes.add(round(s["x"],6))
-                for f in st.session_state.gv_forces: raw_nodes.add(round(f.get("dist",0),6))
-                if q_abs>0: raw_nodes|={round(q_start,6),round(q_end,6)}
-                nodes_s=sorted(raw_nodes); nn=len(nodes_s); ne=nn-1
+        st.markdown("---")
+        if btn_calc:
+            if A_sec==0: st.error("Introduceți secțiunea.")
+            elif G_val<0: st.error("Structura este un mecanism! Adaugă reazeme.")
+            else:
+                try:
+                    # Build node list
+                    raw_nodes=set([0.0,L])
+                    for s in st.session_state.gv_sup: raw_nodes.add(round(s["x"],6))
+                    for f in st.session_state.gv_forces: raw_nodes.add(round(f.get("dist",0),6))
+                    if q_abs>0: raw_nodes|={round(q_start,6),round(q_end,6)}
+                    nodes_s=sorted(raw_nodes); nn=len(nodes_s); ne=nn-1
 
-                def nidx(xv): return nodes_s.index(round(xv,6))
+                    def nidx(xv): return nodes_s.index(round(xv,6))
 
-                # --- anastruct solver ---
-                ss_fem=SystemElements(EI=E*I_sec, EA=E*A_sec)
-                for i in range(ne):
-                    x1=nodes_s[i]; x2=nodes_s[i+1]
-                    ss_fem.add_element(location=[[x1*c_ang,x1*s_ang],[x2*c_ang,x2*s_ang]])
+                    # --- anastruct solver ---
+                    ss_fem=SystemElements(EI=E*I_sec, EA=E*A_sec)
+                    for i in range(ne):
+                        x1=nodes_s[i]; x2=nodes_s[i+1]
+                        ss_fem.add_element(location=[[x1*c_ang,x1*s_ang],[x2*c_ang,x2*s_ang]])
 
-                # Node ID mapping: anastruct node IDs start at 1
-                # node i in nodes_s → anastruct node_id = i+1
-                for s in st.session_state.gv_sup:
-                    nid=nidx(s["x"])+1
-                    if s["tip"]==1: ss_fem.add_support_hinged(node_id=nid)
-                    elif s["tip"]==2: ss_fem.add_support_roll(node_id=nid)
-                    elif s["tip"]==3: ss_fem.add_support_fixed(node_id=nid)
+                    # Node ID mapping: anastruct node IDs start at 1
+                    # node i in nodes_s → anastruct node_id = i+1
+                    for s in st.session_state.gv_sup:
+                        nid=nidx(s["x"])+1
+                        if s["tip"]==1: ss_fem.add_support_hinged(node_id=nid)
+                        elif s["tip"]==2: ss_fem.add_support_roll(node_id=nid)
+                        elif s["tip"]==3: ss_fem.add_support_fixed(node_id=nid)
 
-                # Distributed loads — gravitational (global y direction)
-                if q_abs>0 and q_end>q_start:
-                    for eid in range(1,ne+1):
-                        mid=(nodes_s[eid-1]+nodes_s[eid])/2
-                        if q_start-1e-6<=mid<=q_end+1e-6:
-                            q_sign=-q_abs if q_down else q_abs
-                            ss_fem.q_load(element_id=eid, q=q_sign, direction='y')
+                    # Distributed loads — gravitational (global y direction)
+                    if q_abs>0 and q_end>q_start:
+                        for eid in range(1,ne+1):
+                            mid=(nodes_s[eid-1]+nodes_s[eid])/2
+                            if q_start-1e-6<=mid<=q_end+1e-6:
+                                q_sign=-q_abs if q_down else q_abs
+                                ss_fem.q_load(element_id=eid, q=q_sign, direction='y')
 
-                # Point loads and moments
-                for f in st.session_state.gv_forces:
-                    nid=nidx(f.get("dist",0))+1
-                    if f["tip"]=="F":
-                        fx_f,fy_f=_force_xy(f)
-                        if abs(fx_f)>1e-9: ss_fem.point_load(node_id=nid, Fx=fx_f)
-                        if abs(fy_f)>1e-9: ss_fem.point_load(node_id=nid, Fy=fy_f)
-                    else:
-                        ss_fem.moment_load(node_id=nid, Ty=f.get("val",0))
-
-                ss_fem.solve()
-
-                # Build R_g (reactions array) for downstream drawing code
-                R_g=np.zeros(3*nn)
-                for s in st.session_state.gv_sup:
-                    ni=nidx(s["x"]); nid=ni+1; base=3*ni
-                    r=ss_fem.get_node_results_system(node_id=nid)
-                    R_g[base]=r["Fx"]; R_g[base+1]=r["Fy"]; R_g[base+2]=r["Tz"]
-
-                # Build U_loc (local displacements) for deflection display
-                U_loc=np.zeros(3*nn)
-                for i in range(nn):
-                    nid=i+1
-                    r=ss_fem.get_node_results_system(node_id=nid)
-                    U_loc[3*i]=r["ux"]; U_loc[3*i+1]=r["uy"]; U_loc[3*i+2]=r["phi_z"]
-
-                # Build diagram arrays from anastruct element results
-                x_pl,N_pl,V_pl,M_pl=[],[],[],[]
-                for i in range(ne):
-                    el=ss_fem.element_map[i+1]
-                    Le=nodes_s[i+1]-nodes_s[i]
-                    npts_el=len(el.bending_moment)
-                    xs=np.linspace(nodes_s[i],nodes_s[i+1],npts_el)
-                    x_pl.extend(xs)
-                    # anastruct: axial force from N_1/N_2 (constant per element)
-                    N_arr=np.linspace(el.N_1,el.N_2,npts_el)
-                    N_pl.extend(N_arr)
-                    V_pl.extend(el.shear_force)
-                    M_pl.extend(el.bending_moment)
-
-                st.success("Calcul finalizat!")
-                xa=np.array(x_pl); Va=np.array(V_pl); Ma=np.array(M_pl); Na=np.array(N_pl)
-
-                # --- REACTIUNI frumos ---
-                # --- SCHIȚĂ CU REACȚIUNI DESENATE ---
-                st.markdown("### Reacțiuni la Reazeme")
-                _rsc_arr=max(0.5,L*0.10)
-                # Paleta mată pentru reacțiuni
-                _cV="#4060a8"   # albastru mat — reacțiuni verticale
-                _cH="#3a8060"   # verde-teal mat — reacțiuni orizontale
-                _cM="#7050a8"   # violet mat — momente reazeme
-
-                fig_reac,ax_reac=plt.subplots(figsize=(12,max(4.5,end_y+_dim_drop*2+3.0)),dpi=150)
-                ax_reac.plot([0,end_x],[0,end_y],"k-",lw=7,zorder=3,solid_capstyle="round")
-
-                # Reazeme + etichete noduri (lângă reazem)
-                for idx,s in enumerate(st.session_state.gv_sup):
-                    sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
-                    lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
-                    if s["tip"]==1:
-                        draw_pin(ax_reac,sx_g,sy_g,ss)
-                        ax_reac.text(sx_g-ss*1.2,sy_g-ss*1.5,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
-                                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.2"))
-                    elif s["tip"]==2:
-                        draw_roller(ax_reac,sx_g,sy_g,ss)
-                        ax_reac.text(sx_g-ss*1.2,sy_g-ss*2.2,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
-                                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.2"))
-                    elif s["tip"]==3:
-                        draw_fixed_bottom(ax_reac,sx_g,sy_g,c_ang,s_ang,ss*0.75)
-                        ax_reac.text(sx_g-c_ang*ss*1.2-ss*1.0,sy_g-s_ang*ss*1.2-ss*1.0,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
-                                     ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.2"))
-
-                # Încărcări aplicate — q fără label (R va arăta valoarea)
-                if q_abs>0 and q_end>q_start:
-                    _qpx=-s_ang if q_down else s_ang
-                    _qpy= c_ang if q_down else -c_ang
-                    _qlen=max(0.35,q_abs*0.03+0.25)
-                    _qs=np.linspace(q_start,q_end,9)
-                    for _s in _qs:
-                        _tx=_s*c_ang; _ty=_s*s_ang
-                        ax_reac.annotate("",xy=(_tx,_ty),xytext=(_tx+_qpx*_qlen,_ty+_qpy*_qlen),
-                                         arrowprops=dict(arrowstyle="-|>",color="#2255cc",lw=1.3,mutation_scale=10))
-                    _bx=[_s*c_ang+_qpx*_qlen for _s in _qs]
-                    _by=[_s*s_ang+_qpy*_qlen for _s in _qs]
-                    ax_reac.plot(_bx,_by,color="#2255cc",lw=2.0)
-
-                # Forțe concentrate utilizator
-                for f in st.session_state.gv_forces:
-                    d=f.get("dist",0); fp=d*c_ang; fyp=d*s_ang
-                    if f["tip"]=="F":
-                        fx_g,fy_g=_force_xy(f)
-                        mag=np.sqrt(fx_g**2+fy_g**2)
-                        lbl=f"{abs(f.get('F',mag)):.0f}kN" if "axa" in f else f"{mag:.0f}kN"
-                        draw_force_arrow(ax_reac,fp,fyp,fx_g,fy_g,lbl,color="#c00",scale=_rsc_arr)
-                    else:
-                        _Mv=f.get("val",0)
-                        draw_moment_arc(ax_reac,fp,fyp,_Mv,r=ss*1.05,color="purple")
-
-                # ── Rezultantă q ──
-                if q_abs>0 and q_end>q_start:
-                    R_q=q_abs*(q_end-q_start)
-                    x_R=(q_start+q_end)/2
-                    Rg_x=x_R*c_ang; Rg_y=x_R*s_ang
-                    Rpx=-s_ang if q_down else s_ang
-                    Rpy= c_ang if q_down else -c_ang
-                    R_arrow_len=max(0.65,L*0.13)
-                    ax_reac.annotate("",xy=(Rg_x,Rg_y),
-                                     xytext=(Rg_x+Rpx*R_arrow_len,Rg_y+Rpy*R_arrow_len),
-                                     arrowprops=dict(arrowstyle="-|>",color="#1a6e1a",lw=2.5,
-                                                     mutation_scale=20))
-                    # Label deasupra cozii săgeții, ușor lateral
-                    ax_reac.text(Rg_x+Rpx*(R_arrow_len+0.18),Rg_y+Rpy*(R_arrow_len+0.18),
-                                 f"R = {R_q:.2f} kN",fontsize=9.5,color="#1a6e1a",fontweight="bold",
-                                 ha="center",va="center",
-                                 bbox=dict(fc="white",alpha=0.92,ec="#1a6e1a",lw=0.8,
-                                           boxstyle="round,pad=0.35"))
-                    # Cotare x — jos (sub L total)
-                    _draw_dim_line(ax_reac,0,0,Rg_x,Rg_y,
-                                   f"x = {x_R:.2f} m",
-                                   _dim_drop*0.9,_tick_h,color="#1a6e1a",above=False)
-
-                # ── Săgeți reacțiuni ──
-                for idx,s in enumerate(st.session_state.gv_sup):
-                    ni=nidx(s["x"]); base=3*ni
-                    lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
-                    sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
-                    HA_v=R_g[base]   if s["tip"] in [1,3] else 0.0
-                    VA_v=R_g[base+1] if s["tip"] in [1,2,3] else 0.0
-                    MA_v=R_g[base+2] if s["tip"]==3 else 0.0
-
-                    arr_scale = _rsc_arr * 1.5
-                    is_left = (s["x"] <= L/2)
-
-                    # VA: săgeată mare, text în dreapta
-                    if abs(VA_v)>1e-4:
-                        if VA_v > 0:
-                            v_tip_y = sy_g - ss*1.0
-                            v_tail_y = v_tip_y - arr_scale
+                    # Point loads and moments
+                    for f in st.session_state.gv_forces:
+                        nid=nidx(f.get("dist",0))+1
+                        if f["tip"]=="F":
+                            fx_f,fy_f=_force_xy(f)
+                            if abs(fx_f)>1e-9: ss_fem.point_load(node_id=nid, Fx=fx_f)
+                            if abs(fy_f)>1e-9: ss_fem.point_load(node_id=nid, Fy=fy_f)
                         else:
-                            v_tip_y = sy_g - ss*1.0 - arr_scale
-                            v_tail_y = sy_g - ss*1.0
-                        v_txt_x = sx_g + ss*1.5
-                        v_txt_y = (v_tip_y + v_tail_y)/2
-                        draw_force_arrow(ax_reac, sx_g, v_tip_y,
-                                         0, VA_v, f"V{lbl}={VA_v:.2f}kN",
-                                         color=_cV, scale=arr_scale, lw=2.2, txt_lx=v_txt_x, txt_ly=v_txt_y)
+                            ss_fem.moment_load(node_id=nid, Ty=f.get("val",0))
 
-                    # HA: săgeată din exterior, text deasupra ei
-                    if abs(HA_v)>1e-4:
-                        if is_left:
-                            h_tip_x = sx_g - ss*1.2 if HA_v > 0 else sx_g - ss*1.2 - arr_scale
-                            h_tail_x = h_tip_x - arr_scale if HA_v > 0 else h_tip_x + arr_scale
+                    ss_fem.solve()
+
+                    # Build R_g (reactions array) for downstream drawing code
+                    R_g=np.zeros(3*nn)
+                    for s in st.session_state.gv_sup:
+                        ni=nidx(s["x"]); nid=ni+1; base=3*ni
+                        r=ss_fem.get_node_results_system(node_id=nid)
+                        R_g[base]=r["Fx"]; R_g[base+1]=r["Fy"]; R_g[base+2]=r["Tz"]
+
+                    # Build U_loc (local displacements) for deflection display
+                    U_loc=np.zeros(3*nn)
+                    for i in range(nn):
+                        nid=i+1
+                        r=ss_fem.get_node_results_system(node_id=nid)
+                        U_loc[3*i]=r["ux"]; U_loc[3*i+1]=r["uy"]; U_loc[3*i+2]=r["phi_z"]
+
+                    # Build diagram arrays from anastruct element results
+                    x_pl,N_pl,V_pl,M_pl=[],[],[],[]
+                    for i in range(ne):
+                        el=ss_fem.element_map[i+1]
+                        Le=nodes_s[i+1]-nodes_s[i]
+                        npts_el=len(el.bending_moment)
+                        xs=np.linspace(nodes_s[i],nodes_s[i+1],npts_el)
+                        x_pl.extend(xs)
+                        # anastruct: axial force from N_1/N_2 (constant per element)
+                        N_arr=np.linspace(el.N_1,el.N_2,npts_el)
+                        N_pl.extend(N_arr)
+                        V_pl.extend(el.shear_force)
+                        M_pl.extend(el.bending_moment)
+
+                    st.success("Calcul finalizat!")
+                    xa=np.array(x_pl); Va=np.array(V_pl); Ma=np.array(M_pl); Na=np.array(N_pl)
+
+                    # --- REACTIUNI frumos ---
+                    # --- SCHIȚĂ CU REACȚIUNI DESENATE ---
+                    st.markdown("### Reacțiuni la Reazeme")
+                    _rsc_arr=max(0.5,L*0.10)
+                    # Paleta mată pentru reacțiuni
+                    _cV="#4060a8"   # albastru mat — reacțiuni verticale
+                    _cH="#3a8060"   # verde-teal mat — reacțiuni orizontale
+                    _cM="#7050a8"   # violet mat — momente reazeme
+
+                    fig_reac,ax_reac=plt.subplots(figsize=(12,max(4.5,end_y+_dim_drop*2+3.0)),dpi=150)
+                    ax_reac.plot([0,end_x],[0,end_y],"k-",lw=7,zorder=3,solid_capstyle="round")
+
+                    # Reazeme + etichete noduri (lângă reazem)
+                    for idx,s in enumerate(st.session_state.gv_sup):
+                        sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
+                        lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
+                        if s["tip"]==1:
+                            draw_pin(ax_reac,sx_g,sy_g,ss)
+                            ax_reac.text(sx_g-ss*1.2,sy_g-ss*1.5,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                                         ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.2"))
+                        elif s["tip"]==2:
+                            draw_roller(ax_reac,sx_g,sy_g,ss)
+                            ax_reac.text(sx_g-ss*1.2,sy_g-ss*2.2,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                                         ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.2"))
+                        elif s["tip"]==3:
+                            draw_fixed_bottom(ax_reac,sx_g,sy_g,c_ang,s_ang,ss*0.75)
+                            ax_reac.text(sx_g-c_ang*ss*1.2-ss*1.0,sy_g-s_ang*ss*1.2-ss*1.0,lbl,fontsize=9.5,fontweight="bold",color="#1a3a5c",
+                                         ha="right",va="top",bbox=dict(fc="#e8f0fe",ec="#4a6fa5",lw=0.7,boxstyle="round,pad=0.2"))
+
+                    # Încărcări aplicate — q fără label (R va arăta valoarea)
+                    if q_abs>0 and q_end>q_start:
+                        _qpx=-s_ang if q_down else s_ang
+                        _qpy= c_ang if q_down else -c_ang
+                        _qlen=max(0.35,q_abs*0.03+0.25)
+                        _qs=np.linspace(q_start,q_end,9)
+                        for _s in _qs:
+                            _tx=_s*c_ang; _ty=_s*s_ang
+                            ax_reac.annotate("",xy=(_tx,_ty),xytext=(_tx+_qpx*_qlen,_ty+_qpy*_qlen),
+                                             arrowprops=dict(arrowstyle="-|>",color="#2255cc",lw=1.3,mutation_scale=10))
+                        _bx=[_s*c_ang+_qpx*_qlen for _s in _qs]
+                        _by=[_s*s_ang+_qpy*_qlen for _s in _qs]
+                        ax_reac.plot(_bx,_by,color="#2255cc",lw=2.0)
+
+                    # Forțe concentrate utilizator
+                    for f in st.session_state.gv_forces:
+                        d=f.get("dist",0); fp=d*c_ang; fyp=d*s_ang
+                        if f["tip"]=="F":
+                            fx_g,fy_g=_force_xy(f)
+                            mag=np.sqrt(fx_g**2+fy_g**2)
+                            lbl=f"{abs(f.get('F',mag)):.0f}kN" if "axa" in f else f"{mag:.0f}kN"
+                            draw_force_arrow(ax_reac,fp,fyp,fx_g,fy_g,lbl,color="#c00",scale=_rsc_arr)
                         else:
-                            h_tip_x = sx_g + ss*1.2 + arr_scale if HA_v > 0 else sx_g + ss*1.2
-                            h_tail_x = h_tip_x - arr_scale if HA_v > 0 else h_tip_x + arr_scale
-                        h_txt_x = (h_tip_x + h_tail_x)/2
-                        h_txt_y = sy_g + ss*1.4
-                        draw_force_arrow(ax_reac, h_tip_x, sy_g,
-                                         HA_v, 0, f"H{lbl}={HA_v:.2f}kN",
-                                         color=_cH, scale=arr_scale, lw=2.2, txt_lx=h_txt_x, txt_ly=h_txt_y)
+                            _Mv=f.get("val",0)
+                            draw_moment_arc(ax_reac,fp,fyp,_Mv,r=ss*1.05,color="purple")
 
-                    # MA: mic arc
-                    if abs(MA_v)>1e-4:
-                        draw_moment_arc(ax_reac,sx_g,sy_g,MA_v,r=ss*1.5,color=_cM)
-                        m_txt_x = sx_g - ss*1.8 if is_left else sx_g + ss*1.8
-                        ax_reac.text(m_txt_x, sy_g+ss*2.5,
-                                     f"M{lbl}={MA_v:.2f}kNm",fontsize=7.5,color=_cM,fontweight="bold",
-                                     bbox=dict(fc="white",alpha=0.95,ec=_cM,lw=0.6,
-                                               boxstyle="round,pad=0.2"), ha='center', va='center')
+                    # ── Rezultantă q ──
+                    if q_abs>0 and q_end>q_start:
+                        R_q=q_abs*(q_end-q_start)
+                        x_R=(q_start+q_end)/2
+                        Rg_x=x_R*c_ang; Rg_y=x_R*s_ang
+                        Rpx=-s_ang if q_down else s_ang
+                        Rpy= c_ang if q_down else -c_ang
+                        R_arrow_len=max(0.65,L*0.13)
+                        ax_reac.annotate("",xy=(Rg_x,Rg_y),
+                                         xytext=(Rg_x+Rpx*R_arrow_len,Rg_y+Rpy*R_arrow_len),
+                                         arrowprops=dict(arrowstyle="-|>",color="#1a6e1a",lw=2.5,
+                                                         mutation_scale=20))
+                        # Label deasupra cozii săgeții, ușor lateral
+                        ax_reac.text(Rg_x+Rpx*(R_arrow_len+0.18),Rg_y+Rpy*(R_arrow_len+0.18),
+                                     f"R = {R_q:.2f} kN",fontsize=9.5,color="#1a6e1a",fontweight="bold",
+                                     ha="center",va="center",
+                                     bbox=dict(fc="white",alpha=0.92,ec="#1a6e1a",lw=0.8,
+                                               boxstyle="round,pad=0.35"))
+                        # Cotare x — jos (sub L total)
+                        _draw_dim_line(ax_reac,0,0,Rg_x,Rg_y,
+                                       f"x = {x_R:.2f} m",
+                                       _dim_drop*0.9,_tick_h,color="#1a6e1a",above=False)
 
-                # Cotare: segmente sus, L jos
-                _draw_dim_line(ax_reac,0,0,end_x,end_y,f"L = {L:.2f} m",
-                               _dim_drop*1.55,_tick_h,above=False)
-                if len(key_xs)>2:
-                    for i in range(len(key_xs)-1):
-                        xa1r=key_xs[i]*c_ang;   ya1r=key_xs[i]*s_ang
-                        xa2r=key_xs[i+1]*c_ang; ya2r=key_xs[i+1]*s_ang
-                        _draw_dim_line(ax_reac,xa1r,ya1r,xa2r,ya2r,
-                                       f"{key_xs[i+1]-key_xs[i]:.2f} m",
-                                       _dim_drop*0.7,_tick_h,color="#4a6fa5",above=True)
+                    # ── Săgeți reacțiuni ──
+                    for idx,s in enumerate(st.session_state.gv_sup):
+                        ni=nidx(s["x"]); base=3*ni
+                        lbl=node_labels[idx] if idx<len(node_labels) else str(idx)
+                        sx_g=s["x"]*c_ang; sy_g=s["x"]*s_ang
+                        HA_v=R_g[base]   if s["tip"] in [1,3] else 0.0
+                        VA_v=R_g[base+1] if s["tip"] in [1,2,3] else 0.0
+                        MA_v=R_g[base+2] if s["tip"]==3 else 0.0
 
-                draw_axes(ax_reac,min(0,end_x)-1.2,min(0,end_y)-0.3,length=0.7)
-                mg=max(L*0.22,1.5)
-                ax_reac.set_xlim(min(0,end_x)-mg,max(0,end_x)+mg)
-                _extra_bot=ss*3.0+abs(s_ang)*ss*2.0+_rsc_arr+0.8
-                ax_reac.set_ylim(min(0,end_y)-_dim_drop*2.2-mg*0.4-_extra_bot,max(0,end_y)+_dim_drop*1.0+mg*0.5)
-                ax_reac.set_aspect("equal"); ax_reac.axis("off")
-                ax_reac.set_title("Schiță cu Reacțiuni la Reazeme",fontsize=12,fontweight="bold",pad=10)
-                st.pyplot(fig_reac); plt.close(fig_reac)
+                        arr_scale = _rsc_arr * 1.5
+                        is_left = (s["x"] <= L/2)
+
+                        # VA: săgeată mare, text în dreapta
+                        if abs(VA_v)>1e-4:
+                            if VA_v > 0:
+                                v_tip_y = sy_g - ss*1.0
+                                v_tail_y = v_tip_y - arr_scale
+                            else:
+                                v_tip_y = sy_g - ss*1.0 - arr_scale
+                                v_tail_y = sy_g - ss*1.0
+                            v_txt_x = sx_g + ss*1.5
+                            v_txt_y = (v_tip_y + v_tail_y)/2
+                            draw_force_arrow(ax_reac, sx_g, v_tip_y,
+                                             0, VA_v, f"V{lbl}={VA_v:.2f}kN",
+                                             color=_cV, scale=arr_scale, lw=2.2, txt_lx=v_txt_x, txt_ly=v_txt_y)
+
+                        # HA: săgeată din exterior, text deasupra ei
+                        if abs(HA_v)>1e-4:
+                            if is_left:
+                                h_tip_x = sx_g - ss*1.2 if HA_v > 0 else sx_g - ss*1.2 - arr_scale
+                                h_tail_x = h_tip_x - arr_scale if HA_v > 0 else h_tip_x + arr_scale
+                            else:
+                                h_tip_x = sx_g + ss*1.2 + arr_scale if HA_v > 0 else sx_g + ss*1.2
+                                h_tail_x = h_tip_x - arr_scale if HA_v > 0 else h_tip_x + arr_scale
+                            h_txt_x = (h_tip_x + h_tail_x)/2
+                            h_txt_y = sy_g + ss*1.4
+                            draw_force_arrow(ax_reac, h_tip_x, sy_g,
+                                             HA_v, 0, f"H{lbl}={HA_v:.2f}kN",
+                                             color=_cH, scale=arr_scale, lw=2.2, txt_lx=h_txt_x, txt_ly=h_txt_y)
+
+                        # MA: mic arc
+                        if abs(MA_v)>1e-4:
+                            draw_moment_arc(ax_reac,sx_g,sy_g,MA_v,r=ss*1.5,color=_cM)
+                            m_txt_x = sx_g - ss*1.8 if is_left else sx_g + ss*1.8
+                            ax_reac.text(m_txt_x, sy_g+ss*2.5,
+                                         f"M{lbl}={MA_v:.2f}kNm",fontsize=7.5,color=_cM,fontweight="bold",
+                                         bbox=dict(fc="white",alpha=0.95,ec=_cM,lw=0.6,
+                                                   boxstyle="round,pad=0.2"), ha='center', va='center')
+
+                    # Cotare: segmente sus, L jos
+                    _draw_dim_line(ax_reac,0,0,end_x,end_y,f"L = {L:.2f} m",
+                                   _dim_drop*1.55,_tick_h,above=False)
+                    if len(key_xs)>2:
+                        for i in range(len(key_xs)-1):
+                            xa1r=key_xs[i]*c_ang;   ya1r=key_xs[i]*s_ang
+                            xa2r=key_xs[i+1]*c_ang; ya2r=key_xs[i+1]*s_ang
+                            _draw_dim_line(ax_reac,xa1r,ya1r,xa2r,ya2r,
+                                           f"{key_xs[i+1]-key_xs[i]:.2f} m",
+                                           _dim_drop*0.7,_tick_h,color="#4a6fa5",above=True)
+
+                    draw_axes(ax_reac,min(0,end_x)-1.2,min(0,end_y)-0.3,length=0.7)
+                    mg=max(L*0.22,1.5)
+                    ax_reac.set_xlim(min(0,end_x)-mg,max(0,end_x)+mg)
+                    _extra_bot=ss*3.0+abs(s_ang)*ss*2.0+_rsc_arr+0.8
+                    ax_reac.set_ylim(min(0,end_y)-_dim_drop*2.2-mg*0.4-_extra_bot,max(0,end_y)+_dim_drop*1.0+mg*0.5)
+                    ax_reac.set_aspect("equal"); ax_reac.axis("off")
+                    ax_reac.set_title("Schiță cu Reacțiuni la Reazeme",fontsize=12,fontweight="bold",pad=10)
+                    st.pyplot(fig_reac); plt.close(fig_reac)
 
 
-                # Echilibru global
-                Fx_sum=sum(R_g[3*nidx(s["x"])] for s in st.session_state.gv_sup if s["tip"] in [1,3])
-                Fy_sum=sum(R_g[3*nidx(s["x"])+1] for s in st.session_state.gv_sup if s["tip"] in [1,2,3])
-                for f in st.session_state.gv_forces:
-                    if f["tip"]=="F":
-                        fx_f,fy_f=_force_xy(f)
-                        Fx_sum+=fx_f; Fy_sum+=fy_f
-                if q_abs>0: Fy_sum+=(-q_eff)*(q_end-q_start)*c_ang  # global y from perp q
+                    # Echilibru global
+                    Fx_sum=sum(R_g[3*nidx(s["x"])] for s in st.session_state.gv_sup if s["tip"] in [1,3])
+                    Fy_sum=sum(R_g[3*nidx(s["x"])+1] for s in st.session_state.gv_sup if s["tip"] in [1,2,3])
+                    for f in st.session_state.gv_forces:
+                        if f["tip"]=="F":
+                            fx_f,fy_f=_force_xy(f)
+                            Fx_sum+=fx_f; Fy_sum+=fy_f
+                    if q_abs>0: Fy_sum+=(-q_eff)*(q_end-q_start)*c_ang  # global y from perp q
 
-                eq1,eq2=st.columns(2)
-                _ = eq1.success(f"ΣFx={Fx_sum:.4f} ≈ 0") if abs(Fx_sum)<0.05 else eq1.warning(f"ΣFx={Fx_sum:.4f}")
-                _ = eq2.success(f"ΣFy={Fy_sum:.4f} ≈ 0") if abs(Fy_sum)<0.05 else eq2.warning(f"ΣFy={Fy_sum:.4f}")
+                    eq1,eq2=st.columns(2)
+                    _ = eq1.success(f"ΣFx={Fx_sum:.4f} ≈ 0") if abs(Fx_sum)<0.05 else eq1.warning(f"ΣFx={Fx_sum:.4f}")
+                    _ = eq2.success(f"ΣFy={Fy_sum:.4f} ≈ 0") if abs(Fy_sum)<0.05 else eq2.warning(f"ΣFy={Fy_sum:.4f}")
 
-                st.metric("Săgeată maximă",f"{np.max(np.abs(U_loc[1::3]))*1000:.4f} mm")
+                    st.metric("Săgeată maximă",f"{np.max(np.abs(U_loc[1::3]))*1000:.4f} mm")
 
-                # --- DIAGRAME N, T, M ---
-                fig_r,(aN,aV,aM)=plt.subplots(3,1,figsize=(13,11),sharex=True,dpi=180)
-                fill_diagram(aN,xa,Na,"#1a6faf","N (kN)",sign_labels=False); aN.set_title("N(x) — Efort axial",fontweight="bold",color="#1a6faf"); label_extremes(aN,xa,Na,"#1a6faf")
-                if np.max(Na)>0.01: aN.text(xa[np.argmax(Na)],Na[np.argmax(Na)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#1a6faf",alpha=0.75)
-                if np.min(Na)<-0.01: aN.text(xa[np.argmin(Na)],Na[np.argmin(Na)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#1a6faf",alpha=0.75)
-                fill_diagram(aV,xa,Va,"#2ca02c","T (kN)",sign_labels=False); aV.set_title("T(x) — Forță tăietoare",fontweight="bold",color="#2ca02c"); label_extremes(aV,xa,Va,"#2ca02c")
-                if np.max(Va)>0.01: aV.text(xa[np.argmax(Va)],Va[np.argmax(Va)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#2ca02c",alpha=0.75)
-                if np.min(Va)<-0.01: aV.text(xa[np.argmin(Va)],Va[np.argmin(Va)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#2ca02c",alpha=0.75)
-                # M diagram: convenție română + jos (fibra întinsă jos)
-                aM.fill_between(xa,-Ma,0,color="#d62728",alpha=0.32); aM.plot(xa,-Ma,color="#d62728",lw=2.2)
-                aM.axhline(0,color='black',lw=1.2); aM.set_ylabel("M (kNm)",color="#d62728",fontweight='bold',fontsize=10)
-                aM.grid(True,alpha=0.18,linestyle='--'); aM.spines['top'].set_visible(False); aM.spines['right'].set_visible(False)
-                aM.set_title("M(x) — Moment încovoietor",fontweight="bold",color="#d62728")
-                if np.max(Ma)>0.01: aM.text(xa[np.argmax(Ma)],-Ma[np.argmax(Ma)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#d62728",alpha=0.75)
-                if np.min(Ma)<-0.01: aM.text(xa[np.argmin(Ma)],-Ma[np.argmin(Ma)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#d62728",alpha=0.75)
-                _shown=set()
-                for _i in [int(np.argmax(Ma)),int(np.argmin(Ma)),0,len(Ma)-1]:
-                    _v=Ma[_i]
-                    if abs(_v)<1e-6 or round(_v,3) in _shown: continue
-                    _shown.add(round(_v,3))
-                    aM.annotate(f'{_v:.3f}',xy=(xa[_i],-_v),fontsize=8,color="#d62728",fontweight='bold',
-                                ha='center',va='bottom' if _v>=0 else 'top',
-                                bbox=dict(fc='white',alpha=0.75,ec='none',pad=1.5))
+                    # --- DIAGRAME N, T, M ---
+                    fig_r,(aN,aV,aM)=plt.subplots(3,1,figsize=(13,11),sharex=True,dpi=180)
+                    fill_diagram(aN,xa,Na,"#1a6faf","N (kN)",sign_labels=False); aN.set_title("N(x) — Efort axial",fontweight="bold",color="#1a6faf"); label_extremes(aN,xa,Na,"#1a6faf")
+                    if np.max(Na)>0.01: aN.text(xa[np.argmax(Na)],Na[np.argmax(Na)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#1a6faf",alpha=0.75)
+                    if np.min(Na)<-0.01: aN.text(xa[np.argmin(Na)],Na[np.argmin(Na)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#1a6faf",alpha=0.75)
+                    fill_diagram(aV,xa,Va,"#2ca02c","T (kN)",sign_labels=False); aV.set_title("T(x) — Forță tăietoare",fontweight="bold",color="#2ca02c"); label_extremes(aV,xa,Va,"#2ca02c")
+                    if np.max(Va)>0.01: aV.text(xa[np.argmax(Va)],Va[np.argmax(Va)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#2ca02c",alpha=0.75)
+                    if np.min(Va)<-0.01: aV.text(xa[np.argmin(Va)],Va[np.argmin(Va)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#2ca02c",alpha=0.75)
+                    # M diagram: convenție română + jos (fibra întinsă jos)
+                    aM.fill_between(xa,-Ma,0,color="#d62728",alpha=0.32); aM.plot(xa,-Ma,color="#d62728",lw=2.2)
+                    aM.axhline(0,color='black',lw=1.2); aM.set_ylabel("M (kNm)",color="#d62728",fontweight='bold',fontsize=10)
+                    aM.grid(True,alpha=0.18,linestyle='--'); aM.spines['top'].set_visible(False); aM.spines['right'].set_visible(False)
+                    aM.set_title("M(x) — Moment încovoietor",fontweight="bold",color="#d62728")
+                    if np.max(Ma)>0.01: aM.text(xa[np.argmax(Ma)],-Ma[np.argmax(Ma)]*0.5,"+",ha='center',va='center',fontsize=14,fontweight='bold',color="#d62728",alpha=0.75)
+                    if np.min(Ma)<-0.01: aM.text(xa[np.argmin(Ma)],-Ma[np.argmin(Ma)]*0.5,"−",ha='center',va='center',fontsize=14,fontweight='bold',color="#d62728",alpha=0.75)
+                    _shown=set()
+                    for _i in [int(np.argmax(Ma)),int(np.argmin(Ma)),0,len(Ma)-1]:
+                        _v=Ma[_i]
+                        if abs(_v)<1e-6 or round(_v,3) in _shown: continue
+                        _shown.add(round(_v,3))
+                        aM.annotate(f'{_v:.3f}',xy=(xa[_i],-_v),fontsize=8,color="#d62728",fontweight='bold',
+                                    ha='center',va='bottom' if _v>=0 else 'top',
+                                    bbox=dict(fc='white',alpha=0.75,ec='none',pad=1.5))
 
-                # Mmax unde T=0
-                sign_ch=np.where(np.diff(np.sign(Va)))[0]
-                for sc in sign_ch:
-                    dV=Va[sc+1]-Va[sc]
-                    if abs(dV)<1e-9: continue
-                    x0=xa[sc]-Va[sc]*(xa[sc+1]-xa[sc])/dV
-                    m0=float(np.interp(x0,xa,Ma))
-                    aV.axvline(x0,color="orange",lw=1.2,ls="--",alpha=0.8)
-                    aM.axvline(x0,color="orange",lw=1.2,ls="--",alpha=0.8)
-                    aM.annotate(f"M_max\n{m0:.3f}kNm",xy=(x0,-m0),fontsize=8,color="orange",fontweight="bold",
-                                ha="center",va="top",bbox=dict(fc="white",alpha=0.8,ec="orange",pad=2))
-
-                aM.set_xlabel("x (m)",fontsize=11); plt.tight_layout()
-                fig_r.suptitle(f"Diagrame N, T, M — {mat}  EI={E*I_sec/1e3:.0f} MNm²",fontsize=13,fontweight="bold",y=1.01)
-                st.pyplot(fig_r)
-
-                # Formule Mmax
-                if len(sign_ch)>0:
-                    st.markdown("### Formule Moment Maxim (unde T=0)")
+                    # Mmax unde T=0
+                    sign_ch=np.where(np.diff(np.sign(Va)))[0]
                     for sc in sign_ch:
                         dV=Va[sc+1]-Va[sc]
                         if abs(dV)<1e-9: continue
                         x0=xa[sc]-Va[sc]*(xa[sc+1]-xa[sc])/dV
                         m0=float(np.interp(x0,xa,Ma))
-                        V0_near=float(Va[max(0,sc-2)])
+                        aV.axvline(x0,color="orange",lw=1.2,ls="--",alpha=0.8)
+                        aM.axvline(x0,color="orange",lw=1.2,ls="--",alpha=0.8)
+                        aM.annotate(f"M_max\n{m0:.3f}kNm",xy=(x0,-m0),fontsize=8,color="orange",fontweight="bold",
+                                    ha="center",va="top",bbox=dict(fc="white",alpha=0.8,ec="orange",pad=2))
+
+                    aM.set_xlabel("x (m)",fontsize=11); plt.tight_layout()
+                    fig_r.suptitle(f"Diagrame N, T, M — {mat}  EI={E*I_sec/1e3:.0f} MNm²",fontsize=13,fontweight="bold",y=1.01)
+                    st.pyplot(fig_r)
+
+                    # Formule Mmax
+                    if len(sign_ch)>0:
+                        st.markdown("### Formule Moment Maxim (unde T=0)")
+                        for sc in sign_ch:
+                            dV=Va[sc+1]-Va[sc]
+                            if abs(dV)<1e-9: continue
+                            x0=xa[sc]-Va[sc]*(xa[sc+1]-xa[sc])/dV
+                            m0=float(np.interp(x0,xa,Ma))
+                            V0_near=float(Va[max(0,sc-2)])
+                            if q_abs>0:
+                                st.latex(rf"T(x_0)=0 \Rightarrow x_0={x0:.3f}\text{{m}},\quad M_{{max}}=M(x_0)={m0:.3f}\text{{kNm}}")
+                            else:
+                                st.latex(rf"T\text{{ se anulează la }}x_0={x0:.3f}\text{{m}},\quad M_{{max}}={m0:.3f}\text{{kNm}}")
+
+                    # Model de calcul
+                    with st.expander("Model de calcul (pas cu pas)"):
+                        st.markdown(f"""**Structura:** {len(st.session_state.gv_sup)} reazeme, {nn} noduri FEM, {ne} elemente
+    **EI** = {E:.2e} kN/m² × {I_sec:.4e} m⁴ = {E*I_sec:.3e} kNm²
+    **EA** = {E:.2e} × {A_sec:.4f} = {E*A_sec:.3e} kN
+    **Solver:** anastruct (SystemElements)""")
+                        st.markdown("**Algoritmul FEM:**")
+                        st.latex(r"\mathbf{K}\cdot\mathbf{u}=\mathbf{F}\;\Rightarrow\;\mathbf{u}_{liber}=\mathbf{K}_{ll}^{-1}\cdot\mathbf{F}_{liber}")
+                        st.latex(r"\mathbf{R}=\mathbf{K}\cdot\mathbf{u}-\mathbf{F}\quad(\text{reacțiuni})")
+                        st.markdown(f"**Noduri FEM:** {[f'{v:.2f}m' for v in nodes_s]}")
+                        st.markdown(f"**GDL total:** {3*nn}")
+                        st.markdown("**Eforturi în secțiune prin integrare:**")
+                        st.latex(r"N(x)=\text{const./element},\quad T(x)=T_0+q\cdot x,\quad M(x)=M_0+T_0\cdot x+\frac{q x^2}{2}")
+
+                    # ── PDF cu pași detaliați de calcul ──
+                    def _pdf_text_page(pdf, lines, title="", fontsize=10):
+                        """Create a well-spaced text PDF page using matplotlib."""
+                        fig_t,ax_t=plt.subplots(figsize=(8.27,11.69),dpi=150)
+                        ax_t.axis('off')
+                        if title:
+                            ax_t.text(0.5,0.96,title,transform=ax_t.transAxes,fontsize=14,fontweight='bold',
+                                      ha='center',va='top',color='#0d1b2a')
+                            ax_t.plot([0.05,0.95],[0.945,0.945],transform=ax_t.transAxes,color='#E8641A',lw=2)
+                        y_pos=0.92 if title else 0.96
+                        for line in lines:
+                            if y_pos<0.03: break
+                            if line.startswith("##"):
+                                y_pos-=0.012
+                                ax_t.text(0.05,y_pos,line[2:].strip(),transform=ax_t.transAxes,fontsize=11.5,
+                                          fontweight='bold',color='#1a3a5c',va='top')
+                                y_pos-=0.026
+                            elif line=="---":
+                                y_pos-=0.006
+                                ax_t.plot([0.05,0.95],[y_pos,y_pos],transform=ax_t.transAxes,color='#bbb',lw=0.8)
+                                y_pos-=0.012
+                            elif line=="":
+                                y_pos-=0.010
+                            else:
+                                ax_t.text(0.06,y_pos,line,transform=ax_t.transAxes,fontsize=fontsize,va='top',
+                                          color='#222',family='serif')
+                                y_pos-=0.022
+                        fig_t.subplots_adjust(left=0.05,right=0.95,top=0.98,bottom=0.02)
+                        pdf.savefig(fig_t,bbox_inches="tight"); plt.close(fig_t)
+
+                    def _pdf_text_pages(pdf, lines, title="", fontsize=10):
+                        """Split lines across multiple pages if needed."""
+                        max_lines_per_page=48
+                        for pg in range(0, len(lines), max_lines_per_page):
+                            chunk=lines[pg:pg+max_lines_per_page]
+                            t=title if pg==0 else f"{title} (cont.)"
+                            _pdf_text_page(pdf, chunk, title=t, fontsize=fontsize)
+
+                    buf=BytesIO()
+                    with PdfPages(buf) as pdf:
+                        # Pagina 1: Schița structurii
+                        pdf.savefig(fig1,bbox_inches="tight")
+                        # Pagina 2: Schița cu reacțiuni
+                        pdf.savefig(fig_reac,bbox_inches="tight")
+
+                        # Pagina 3: Totul pe un singur flux — date, echilibru, eforturi
+                        all_lines=[]
+                        all_lines.append("## 1. Date de intrare")
+                        all_lines.append(f"L = {L:.2f} m,  θ = {theta_deg:.0f}°,  b×h = {b_cm:.0f}×{h_cm:.0f} cm,  {mat}")
+                        all_lines.append(f"A = {A_sec*1e4:.1f} cm²,  I = {I_sec:.3e} m⁴,  EI = {E*I_sec:.3e} kNm²")
+                        tip_short={0:"Liber",1:"Pin",2:"Roller",3:"Încastrare"}
+                        sup_strs=[f"{node_labels[i] if i<6 else str(i)}: {tip_short[s['tip']]} x={s['x']:.2f}m" for i,s in enumerate(st.session_state.gv_sup)]
+                        all_lines.append(f"Reazeme: {',  '.join(sup_strs)}   (r={total_r}, ns={G_val})")
                         if q_abs>0:
-                            st.latex(rf"T(x_0)=0 \Rightarrow x_0={x0:.3f}\text{{m}},\quad M_{{max}}=M(x_0)={m0:.3f}\text{{kNm}}")
-                        else:
-                            st.latex(rf"T\text{{ se anulează la }}x_0={x0:.3f}\text{{m}},\quad M_{{max}}={m0:.3f}\text{{kNm}}")
+                            Rq_val=q_abs*(q_end-q_start); xRq_val=(q_start+q_end)/2
+                            all_lines.append(f"q = {q_abs:.1f} kN/m ({'↓' if q_down else '↑'}) x∈[{q_start:.1f},{q_end:.1f}]  →  R_q = {Rq_val:.2f} kN la x_R = {xRq_val:.2f} m")
+                        for idx_f,f in enumerate(st.session_state.gv_forces):
+                            if f["tip"]=="F":
+                                fx_pdf,fy_pdf=_force_xy(f)
+                                all_lines.append(f"F{idx_f+1}: Fx={fx_pdf:.2f}, Fy={fy_pdf:.2f} kN la x={f.get('dist',0):.2f} m")
+                            else:
+                                all_lines.append(f"M{idx_f+1}: {f.get('val',0):.2f} kNm la x={f.get('dist',0):.2f} m")
+                        all_lines.append("")
 
-                # Model de calcul
-                with st.expander("Model de calcul (pas cu pas)"):
-                    st.markdown(f"""**Structura:** {len(st.session_state.gv_sup)} reazeme, {nn} noduri FEM, {ne} elemente
-**EI** = {E:.2e} kN/m² × {I_sec:.4e} m⁴ = {E*I_sec:.3e} kNm²
-**EA** = {E:.2e} × {A_sec:.4f} = {E*A_sec:.3e} kN
-**Solver:** anastruct (SystemElements)""")
-                    st.markdown("**Algoritmul FEM:**")
-                    st.latex(r"\mathbf{K}\cdot\mathbf{u}=\mathbf{F}\;\Rightarrow\;\mathbf{u}_{liber}=\mathbf{K}_{ll}^{-1}\cdot\mathbf{F}_{liber}")
-                    st.latex(r"\mathbf{R}=\mathbf{K}\cdot\mathbf{u}-\mathbf{F}\quad(\text{reacțiuni})")
-                    st.markdown(f"**Noduri FEM:** {[f'{v:.2f}m' for v in nodes_s]}")
-                    st.markdown(f"**GDL total:** {3*nn}")
-                    st.markdown("**Eforturi în secțiune prin integrare:**")
-                    st.latex(r"N(x)=\text{const./element},\quad T(x)=T_0+q\cdot x,\quad M(x)=M_0+T_0\cdot x+\frac{q x^2}{2}")
+                        # Ecuații de echilibru
+                        reac_info=[]
+                        for idx_s,s in enumerate(st.session_state.gv_sup):
+                            ni_s=nidx(s["x"]); base_s=3*ni_s
+                            lbl_s=node_labels[idx_s] if idx_s<len(node_labels) else str(idx_s)
+                            H_r=R_g[base_s] if s["tip"] in [1,3] else 0.0
+                            V_r=R_g[base_s+1] if s["tip"] in [1,2,3] else 0.0
+                            M_r=R_g[base_s+2] if s["tip"]==3 else 0.0
+                            reac_info.append({"lbl":lbl_s,"x":s["x"],"tip":s["tip"],"H":H_r,"V":V_r,"M":M_r})
 
-                # ── PDF cu pași detaliați de calcul ──
-                def _pdf_text_page(pdf, lines, title="", fontsize=10):
-                    """Create a well-spaced text PDF page using matplotlib."""
-                    fig_t,ax_t=plt.subplots(figsize=(8.27,11.69),dpi=150)
-                    ax_t.axis('off')
-                    if title:
-                        ax_t.text(0.5,0.96,title,transform=ax_t.transAxes,fontsize=14,fontweight='bold',
-                                  ha='center',va='top',color='#0d1b2a')
-                        ax_t.plot([0.05,0.95],[0.945,0.945],transform=ax_t.transAxes,color='#E8641A',lw=2)
-                    y_pos=0.92 if title else 0.96
-                    for line in lines:
-                        if y_pos<0.03: break
-                        if line.startswith("##"):
-                            y_pos-=0.012
-                            ax_t.text(0.05,y_pos,line[2:].strip(),transform=ax_t.transAxes,fontsize=11.5,
-                                      fontweight='bold',color='#1a3a5c',va='top')
-                            y_pos-=0.026
-                        elif line=="---":
-                            y_pos-=0.006
-                            ax_t.plot([0.05,0.95],[y_pos,y_pos],transform=ax_t.transAxes,color='#bbb',lw=0.8)
-                            y_pos-=0.012
-                        elif line=="":
-                            y_pos-=0.010
-                        else:
-                            ax_t.text(0.06,y_pos,line,transform=ax_t.transAxes,fontsize=fontsize,va='top',
-                                      color='#222',family='serif')
-                            y_pos-=0.022
-                    fig_t.subplots_adjust(left=0.05,right=0.95,top=0.98,bottom=0.02)
-                    pdf.savefig(fig_t,bbox_inches="tight"); plt.close(fig_t)
-
-                def _pdf_text_pages(pdf, lines, title="", fontsize=10):
-                    """Split lines across multiple pages if needed."""
-                    max_lines_per_page=48
-                    for pg in range(0, len(lines), max_lines_per_page):
-                        chunk=lines[pg:pg+max_lines_per_page]
-                        t=title if pg==0 else f"{title} (cont.)"
-                        _pdf_text_page(pdf, chunk, title=t, fontsize=fontsize)
-
-                buf=BytesIO()
-                with PdfPages(buf) as pdf:
-                    # Pagina 1: Schița structurii
-                    pdf.savefig(fig1,bbox_inches="tight")
-                    # Pagina 2: Schița cu reacțiuni
-                    pdf.savefig(fig_reac,bbox_inches="tight")
-
-                    # Pagina 3: Totul pe un singur flux — date, echilibru, eforturi
-                    all_lines=[]
-                    all_lines.append("## 1. Date de intrare")
-                    all_lines.append(f"L = {L:.2f} m,  θ = {theta_deg:.0f}°,  b×h = {b_cm:.0f}×{h_cm:.0f} cm,  {mat}")
-                    all_lines.append(f"A = {A_sec*1e4:.1f} cm²,  I = {I_sec:.3e} m⁴,  EI = {E*I_sec:.3e} kNm²")
-                    tip_short={0:"Liber",1:"Pin",2:"Roller",3:"Încastrare"}
-                    sup_strs=[f"{node_labels[i] if i<6 else str(i)}: {tip_short[s['tip']]} x={s['x']:.2f}m" for i,s in enumerate(st.session_state.gv_sup)]
-                    all_lines.append(f"Reazeme: {',  '.join(sup_strs)}   (r={total_r}, ns={G_val})")
-                    if q_abs>0:
-                        Rq_val=q_abs*(q_end-q_start); xRq_val=(q_start+q_end)/2
-                        all_lines.append(f"q = {q_abs:.1f} kN/m ({'↓' if q_down else '↑'}) x∈[{q_start:.1f},{q_end:.1f}]  →  R_q = {Rq_val:.2f} kN la x_R = {xRq_val:.2f} m")
-                    for idx_f,f in enumerate(st.session_state.gv_forces):
-                        if f["tip"]=="F":
-                            fx_pdf,fy_pdf=_force_xy(f)
-                            all_lines.append(f"F{idx_f+1}: Fx={fx_pdf:.2f}, Fy={fy_pdf:.2f} kN la x={f.get('dist',0):.2f} m")
-                        else:
-                            all_lines.append(f"M{idx_f+1}: {f.get('val',0):.2f} kNm la x={f.get('dist',0):.2f} m")
-                    all_lines.append("")
-
-                    # Ecuații de echilibru
-                    reac_info=[]
-                    for idx_s,s in enumerate(st.session_state.gv_sup):
-                        ni_s=nidx(s["x"]); base_s=3*ni_s
-                        lbl_s=node_labels[idx_s] if idx_s<len(node_labels) else str(idx_s)
-                        H_r=R_g[base_s] if s["tip"] in [1,3] else 0.0
-                        V_r=R_g[base_s+1] if s["tip"] in [1,2,3] else 0.0
-                        M_r=R_g[base_s+2] if s["tip"]==3 else 0.0
-                        reac_info.append({"lbl":lbl_s,"x":s["x"],"tip":s["tip"],"H":H_r,"V":V_r,"M":M_r})
-
-                    all_lines.append("## 2. Ecuații de echilibru")
-                    sfx_parts=[]
-                    for r_i in reac_info:
-                        if r_i["tip"] in [1,3] and abs(r_i["H"])>1e-6:
-                            sfx_parts.append(f"H{r_i['lbl']}={r_i['H']:+.2f}")
-                    for f in st.session_state.gv_forces:
-                        if f["tip"]=="F":
-                            fx_p,_=_force_xy(f)
-                            if abs(fx_p)>1e-6: sfx_parts.append(f"Fx={fx_p:+.2f}")
-                    all_lines.append("ΣFx = 0:  " + (" + ".join(sfx_parts) + " = 0" if sfx_parts else "(fără Fx)"))
-                    sfy_parts=[]
-                    for r_i in reac_info:
-                        if r_i["tip"] in [1,2,3] and abs(r_i["V"])>1e-6:
-                            sfy_parts.append(f"V{r_i['lbl']}={r_i['V']:+.2f}")
-                    for f in st.session_state.gv_forces:
-                        if f["tip"]=="F":
-                            _,fy_p=_force_xy(f)
-                            if abs(fy_p)>1e-6: sfy_parts.append(f"Fy={fy_p:+.2f}")
-                    if q_abs>0:
-                        Rq_fy=(-q_eff)*(q_end-q_start)*c_ang
-                        sfy_parts.append(f"R_q={Rq_fy:+.2f}")
-                    all_lines.append("ΣFy = 0:  " + (" + ".join(sfy_parts) + " = 0" if sfy_parts else "(fără Fy)"))
-                    first_sup=reac_info[0] if reac_info else None
-                    if first_sup:
-                        all_lines.append(f"ΣM{first_sup['lbl']} = 0 (față de {first_sup['lbl']}, x={first_sup['x']:.2f} m):")
+                        all_lines.append("## 2. Ecuații de echilibru")
+                        sfx_parts=[]
                         for r_i in reac_info:
-                            brat=r_i["x"]-first_sup["x"]
-                            if abs(brat)>1e-6 and abs(r_i["V"])>1e-6:
-                                all_lines.append(f"    V{r_i['lbl']}·{abs(brat):.2f} = {r_i['V']:.2f}·{abs(brat):.2f} = {r_i['V']*brat:+.2f} kNm")
-                            if abs(r_i["M"])>1e-6:
-                                all_lines.append(f"    M{r_i['lbl']} = {r_i['M']:+.2f} kNm")
+                            if r_i["tip"] in [1,3] and abs(r_i["H"])>1e-6:
+                                sfx_parts.append(f"H{r_i['lbl']}={r_i['H']:+.2f}")
                         for f in st.session_state.gv_forces:
-                            d_f=f.get("dist",0); brat_f=d_f-first_sup["x"]
+                            if f["tip"]=="F":
+                                fx_p,_=_force_xy(f)
+                                if abs(fx_p)>1e-6: sfx_parts.append(f"Fx={fx_p:+.2f}")
+                        all_lines.append("ΣFx = 0:  " + (" + ".join(sfx_parts) + " = 0" if sfx_parts else "(fără Fx)"))
+                        sfy_parts=[]
+                        for r_i in reac_info:
+                            if r_i["tip"] in [1,2,3] and abs(r_i["V"])>1e-6:
+                                sfy_parts.append(f"V{r_i['lbl']}={r_i['V']:+.2f}")
+                        for f in st.session_state.gv_forces:
                             if f["tip"]=="F":
                                 _,fy_p=_force_xy(f)
-                                if abs(fy_p)>1e-6 and abs(brat_f)>1e-6:
-                                    all_lines.append(f"    Fy·{abs(brat_f):.2f} = {fy_p:.2f}·{abs(brat_f):.2f} = {fy_p*brat_f:+.2f} kNm")
-                            else:
-                                all_lines.append(f"    M_ext = {f.get('val',0):+.2f} kNm")
+                                if abs(fy_p)>1e-6: sfy_parts.append(f"Fy={fy_p:+.2f}")
                         if q_abs>0:
-                            xRq_m=(q_start+q_end)/2; brat_q=xRq_m-first_sup["x"]
-                            Rq_tot=(-q_eff)*(q_end-q_start)
-                            all_lines.append(f"    R_q·{abs(brat_q):.2f} = {Rq_tot:.2f}·{abs(brat_q):.2f} = {Rq_tot*brat_q:+.2f} kNm")
-                    all_lines.append("")
-                    all_lines.append("## Reacțiuni:")
-                    for r_i in reac_info:
-                        parts=[]
-                        if r_i["tip"] in [1,3]: parts.append(f"H{r_i['lbl']}={r_i['H']:.2f}")
-                        if r_i["tip"] in [1,2,3]: parts.append(f"V{r_i['lbl']}={r_i['V']:.2f}")
-                        if r_i["tip"]==3: parts.append(f"M{r_i['lbl']}={r_i['M']:.2f}")
-                        all_lines.append(f"    {r_i['lbl']}: {',  '.join(parts)} kN")
-                    all_lines.append(f"Verif: ΣFx={Fx_sum:.3f}≈0 {'✓' if abs(Fx_sum)<0.05 else '✗'},  ΣFy={Fy_sum:.3f}≈0 {'✓' if abs(Fy_sum)<0.05 else '✗'}")
-                    all_lines.append("")
-
-                    # Eforturi secționale
-                    all_lines.append("## 3. Eforturi secționale")
-                    for i_e in range(ne):
-                        Le_e=nodes_s[i_e+1]-nodes_s[i_e]
-                        if Le_e<1e-9: continue
-                        x_st=nodes_s[i_e]; x_en=nodes_s[i_e+1]
-                        el_e=ss_fem.element_map[i_e+1]
-                        N_st=el_e.N_1; V_st=el_e.shear_force[0]; V_end=el_e.shear_force[-1]
-                        M_st=el_e.bending_moment[0]; M_end=el_e.bending_moment[-1]
-                        mid_e=(nodes_s[i_e]+nodes_s[i_e+1])/2
-                        hq_e=q_abs>0 and (q_start-1e-6<=mid_e<=q_end+1e-6)
-
-                        hdr=f"Elem.{i_e+1} [{x_st:.2f}–{x_en:.2f}]m" + (f"  q={q_abs:.1f}kN/m" if hq_e else "")
-                        if hq_e:
-                            all_lines.append(f"  {hdr}:  N={N_st:.2f},  T=[{V_st:.2f}→{V_end:.2f}],  M=[{M_st:.2f}→{M_end:.2f}] kN(m)")
-                        else:
-                            all_lines.append(f"  {hdr}:  N={N_st:.2f},  T={V_st:.2f},  M=[{M_st:.2f}→{M_end:.2f}] kN(m)")
-                        if hq_e and V_st*V_end<0:
-                            er=el_e.results if hasattr(el_e,'results') else None
-                            M_max_e=max(abs(el_e.bending_moment.min()),abs(el_e.bending_moment.max()))
-                            all_lines.append(f"      → M_max={M_max_e:.2f} kNm")
-
-                    if len(sign_ch)>0:
+                            Rq_fy=(-q_eff)*(q_end-q_start)*c_ang
+                            sfy_parts.append(f"R_q={Rq_fy:+.2f}")
+                        all_lines.append("ΣFy = 0:  " + (" + ".join(sfy_parts) + " = 0" if sfy_parts else "(fără Fy)"))
+                        first_sup=reac_info[0] if reac_info else None
+                        if first_sup:
+                            all_lines.append(f"ΣM{first_sup['lbl']} = 0 (față de {first_sup['lbl']}, x={first_sup['x']:.2f} m):")
+                            for r_i in reac_info:
+                                brat=r_i["x"]-first_sup["x"]
+                                if abs(brat)>1e-6 and abs(r_i["V"])>1e-6:
+                                    all_lines.append(f"    V{r_i['lbl']}·{abs(brat):.2f} = {r_i['V']:.2f}·{abs(brat):.2f} = {r_i['V']*brat:+.2f} kNm")
+                                if abs(r_i["M"])>1e-6:
+                                    all_lines.append(f"    M{r_i['lbl']} = {r_i['M']:+.2f} kNm")
+                            for f in st.session_state.gv_forces:
+                                d_f=f.get("dist",0); brat_f=d_f-first_sup["x"]
+                                if f["tip"]=="F":
+                                    _,fy_p=_force_xy(f)
+                                    if abs(fy_p)>1e-6 and abs(brat_f)>1e-6:
+                                        all_lines.append(f"    Fy·{abs(brat_f):.2f} = {fy_p:.2f}·{abs(brat_f):.2f} = {fy_p*brat_f:+.2f} kNm")
+                                else:
+                                    all_lines.append(f"    M_ext = {f.get('val',0):+.2f} kNm")
+                            if q_abs>0:
+                                xRq_m=(q_start+q_end)/2; brat_q=xRq_m-first_sup["x"]
+                                Rq_tot=(-q_eff)*(q_end-q_start)
+                                all_lines.append(f"    R_q·{abs(brat_q):.2f} = {Rq_tot:.2f}·{abs(brat_q):.2f} = {Rq_tot*brat_q:+.2f} kNm")
                         all_lines.append("")
-                        all_lines.append("## 4. Moment maxim (T=0)")
-                        for sc in sign_ch:
-                            dV_sc=Va[sc+1]-Va[sc]
-                            if abs(dV_sc)<1e-9: continue
-                            x0_sc=xa[sc]-Va[sc]*(xa[sc+1]-xa[sc])/dV_sc
-                            m0_sc=float(np.interp(x0_sc,xa,Ma))
-                            all_lines.append(f"T=0 la x₀={x0_sc:.3f} m  →  M_max={m0_sc:.2f} kNm")
-                    all_lines.append("")
-                    all_lines.append(f"Săgeată maximă: {np.max(np.abs(U_loc[1::3]))*1000:.3f} mm")
-                    _pdf_text_pages(pdf, all_lines, title="BeamFlow — Calcul Detaliat")
+                        all_lines.append("## Reacțiuni:")
+                        for r_i in reac_info:
+                            parts=[]
+                            if r_i["tip"] in [1,3]: parts.append(f"H{r_i['lbl']}={r_i['H']:.2f}")
+                            if r_i["tip"] in [1,2,3]: parts.append(f"V{r_i['lbl']}={r_i['V']:.2f}")
+                            if r_i["tip"]==3: parts.append(f"M{r_i['lbl']}={r_i['M']:.2f}")
+                            all_lines.append(f"    {r_i['lbl']}: {',  '.join(parts)} kN")
+                        all_lines.append(f"Verif: ΣFx={Fx_sum:.3f}≈0 {'✓' if abs(Fx_sum)<0.05 else '✗'},  ΣFy={Fy_sum:.3f}≈0 {'✓' if abs(Fy_sum)<0.05 else '✗'}")
+                        all_lines.append("")
 
-                    # Ultima pagină: Diagrame N, T, M
-                    pdf.savefig(fig_r,bbox_inches="tight")
+                        # Eforturi secționale
+                        all_lines.append("## 3. Eforturi secționale")
+                        for i_e in range(ne):
+                            Le_e=nodes_s[i_e+1]-nodes_s[i_e]
+                            if Le_e<1e-9: continue
+                            x_st=nodes_s[i_e]; x_en=nodes_s[i_e+1]
+                            el_e=ss_fem.element_map[i_e+1]
+                            N_st=el_e.N_1; V_st=el_e.shear_force[0]; V_end=el_e.shear_force[-1]
+                            M_st=el_e.bending_moment[0]; M_end=el_e.bending_moment[-1]
+                            mid_e=(nodes_s[i_e]+nodes_s[i_e+1])/2
+                            hq_e=q_abs>0 and (q_start-1e-6<=mid_e<=q_end+1e-6)
 
-                st.download_button("Descarcă PDF",buf.getvalue(),"Grinzi2D.pdf","application/pdf",key="gv_dl")
-                plt.close(fig_r)
-            except np.linalg.LinAlgError:
-                st.error("MECANISM! Matricea de rigiditate e singulară — verifică reazemele.")
-            except Exception as ex:
-                st.error(f"Eroare: {ex}")
+                            hdr=f"Elem.{i_e+1} [{x_st:.2f}–{x_en:.2f}]m" + (f"  q={q_abs:.1f}kN/m" if hq_e else "")
+                            if hq_e:
+                                all_lines.append(f"  {hdr}:  N={N_st:.2f},  T=[{V_st:.2f}→{V_end:.2f}],  M=[{M_st:.2f}→{M_end:.2f}] kN(m)")
+                            else:
+                                all_lines.append(f"  {hdr}:  N={N_st:.2f},  T={V_st:.2f},  M=[{M_st:.2f}→{M_end:.2f}] kN(m)")
+                            if hq_e and V_st*V_end<0:
+                                er=el_e.results if hasattr(el_e,'results') else None
+                                M_max_e=max(abs(el_e.bending_moment.min()),abs(el_e.bending_moment.max()))
+                                all_lines.append(f"      → M_max={M_max_e:.2f} kNm")
 
-# ============================================================
-# MODUL 2: REZISTENTA MATERIALELOR
-# ============================================================
+                        if len(sign_ch)>0:
+                            all_lines.append("")
+                            all_lines.append("## 4. Moment maxim (T=0)")
+                            for sc in sign_ch:
+                                dV_sc=Va[sc+1]-Va[sc]
+                                if abs(dV_sc)<1e-9: continue
+                                x0_sc=xa[sc]-Va[sc]*(xa[sc+1]-xa[sc])/dV_sc
+                                m0_sc=float(np.interp(x0_sc,xa,Ma))
+                                all_lines.append(f"T=0 la x₀={x0_sc:.3f} m  →  M_max={m0_sc:.2f} kNm")
+                        all_lines.append("")
+                        all_lines.append(f"Săgeată maximă: {np.max(np.abs(U_loc[1::3]))*1000:.3f} mm")
+                        _pdf_text_pages(pdf, all_lines, title="BeamFlow — Calcul Detaliat")
+
+                        # Ultima pagină: Diagrame N, T, M
+                        pdf.savefig(fig_r,bbox_inches="tight")
+
+                    st.download_button("Descarcă PDF",buf.getvalue(),"Grinzi2D.pdf","application/pdf",key="gv_dl")
+                    plt.close(fig_r)
+                except np.linalg.LinAlgError:
+                    st.error("MECANISM! Matricea de rigiditate e singulară — verifică reazemele.")
+                except Exception as ex:
+                    st.error(f"Eroare: {ex}")
+
+    # ============================================================
+    # MODUL 2: REZISTENTA MATERIALELOR
+    # ============================================================
 elif modul == "Rezistența Materialelor":
     st.title("Rezistența Materialelor I")
     st.markdown("Calcule conform *Rezistența Materialelor I* (481-0.pdf)")
