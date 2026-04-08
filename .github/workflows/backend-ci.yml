@@ -1,0 +1,38 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+jobs:
+  test:
+    name: Test FastAPI Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout cod
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Instaleaza dependinte
+        run: pip install -r backend/requirements.txt
+
+      - name: Ruleaza teste pytest
+        run: pytest backend/tests/ -v
+        env:
+          PYTHONPATH: backend
+
+      - name: Verifica import FastAPI app
+        run: python -c "import sys; sys.path.insert(0,'backend'); from app.main import app; print('Import OK')"
