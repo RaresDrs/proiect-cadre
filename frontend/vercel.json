@@ -1,3 +1,13 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://proiect-cadre-production.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://proiect-cadre-production.up.railway.app/health"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
