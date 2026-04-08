@@ -30,7 +30,7 @@ Aplicatie web + mobile de nivel enterprise pentru analiza structurala 2D (grinzi
 
 Plans:
 - [ ] 00-01-PLAN.md — React 19 + Vite + TypeScript + Tailwind v4 + shadcn/ui scaffold
-- [ ] 00-02-PLAN.md — FastAPI backend + migrare calcule anastruct din app.py
+- [x] 00-02-PLAN.md — FastAPI backend + migrare calcule anastruct din app.py
 - [ ] 00-03-PLAN.md — GitHub Actions CI/CD + deploy Vercel (frontend) + Railway (API)
 
 ### Phase 1: Design Sistem & Landing Page
@@ -112,7 +112,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Setup Proiect | 0/3 | Not started | - |
+| 0. Setup Proiect | 1/3 | In Progress|  |
 | 1. Design Sistem & Landing Page | 0/3 | Not started | - |
 | 2. Modul Grinzi 2D | 0/4 | Not started | - |
 | 3. Modul Cadre 2D | 0/0 | Not started | - |
