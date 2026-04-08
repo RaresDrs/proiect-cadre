@@ -19,7 +19,8 @@
       "Skill(update-config)",
       "Skill(gsd:plan-phase)",
       "WebSearch",
-      "Skill(gsd:execute-phase)"
+      "Skill(gsd:execute-phase)",
+      "Skill(gsd:resume-work)"
     ]
   }
 }
