@@ -26,12 +26,12 @@ Aplicatie web + mobile de nivel enterprise pentru analiza structurala 2D (grinzi
   3. Calculele din app.py sunt disponibile ca endpoint-uri REST
   4. GitHub Actions ruleaza CI la fiecare push
   5. Deploy initial pe Vercel (frontend) si Railway (API) functional
-**Plans**: TBD
+**Plans**: 3 planuri in 2 valuri
 
 Plans:
-- [ ] 00-01: Init repo React + Vite + TypeScript cu Tailwind si shadcn/ui
-- [ ] 00-02: Setup FastAPI cu structura de proiect si migrare calcule din app.py
-- [ ] 00-03: GitHub Actions CI/CD si deploy Vercel + Railway
+- [ ] 00-01-PLAN.md — React 19 + Vite + TypeScript + Tailwind v4 + shadcn/ui scaffold
+- [ ] 00-02-PLAN.md — FastAPI backend + migrare calcule anastruct din app.py
+- [ ] 00-03-PLAN.md — GitHub Actions CI/CD + deploy Vercel (frontend) + Railway (API)
 
 ### Phase 1: Design Sistem & Landing Page
 **Goal**: Landing page profesional cu design system complet, dark/light mode, animatii si SEO optimizat
