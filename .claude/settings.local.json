@@ -17,7 +17,9 @@
       "Bash(\"C:\\\\Program Files\\\\Python310\\\\python.exe\" -m pip install Pillow streamlit-drawable-canvas)",
       "Bash(C:\\\\Program Files\\\\Python310\\\\python.exe:*)",
       "Skill(update-config)",
-      "Skill(gsd:plan-phase)"
+      "Skill(gsd:plan-phase)",
+      "WebSearch",
+      "Skill(gsd:execute-phase)"
     ]
   }
 }
