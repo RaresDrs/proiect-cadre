@@ -1,0 +1,6 @@
+backend/
+app.py
+.planning/
+*.md
+__pycache__/
+*.pyc
