@@ -40,13 +40,11 @@ Declared values (all multiples of 4):
 | lg | 24px | Section sub-element gaps (e.g. feature cards grid gap) |
 | xl | 32px | Nav height, card groups, CTA block padding |
 | 2xl | 48px | Between section sub-blocks |
-| 3xl | 64px | Between major landing sections (Hero, Features, Pricing, FAQ, CTA, Footer) |
-| 4xl | 96px | Hero top/bottom padding on desktop |
+| 3xl | 64px | Between major landing sections (Hero, Features, Pricing, FAQ, CTA, Footer); Hero top/bottom padding on desktop |
 
 Exceptions:
-- Touch targets (nav buttons, dark mode toggle): minimum 44px height — satisfies WCAG 2.5.5
-- Nav sticky height: 64px (xl token)
-- Hero section min-height: 100svh on mobile, auto on desktop with 96px vertical padding
+- Nav sticky height: 64px (3xl token)
+- Hero section min-height: 100svh on mobile, auto on desktop with 64px vertical padding
 
 **Source:** CONTEXT.md D-06, D-15; default 8-point scale; Claude's Discretion for exact values
 
@@ -57,16 +55,16 @@ Exceptions:
 | Role | Size (desktop) | Size (mobile) | Weight | Line Height | Usage |
 |------|---------------|--------------|--------|-------------|-------|
 | Body | 16px | 16px | 400 (regular) | 1.6 | Paragraphs, feature descriptions, FAQ answers |
-| Label | 14px | 14px | 500 (medium) | 1.4 | Nav links, badges, captions, pricing tier labels |
-| Heading | 28px | 22px | 600 (semibold) | 1.3 | Section headings (Features, Pricing, FAQ, CTA) |
+| Label | 14px | 14px | 400 (regular) | 1.4 | Nav links, badges, captions, pricing tier labels |
+| Heading | 28px | 22px | 700 (bold) | 1.3 | Section headings (Features, Pricing, FAQ, CTA) |
 | Display | 56px | 36px | 700 (bold) | 1.1 | Hero headline only |
 
 Font family declaration (CSS): `font-family: 'Geist Variable', system-ui, sans-serif;`
 
 Sub-headline (Hero): 20px desktop / 18px mobile, weight 400, line-height 1.5 — treated as large body, not a separate scale entry.
 
-Weights used: 400 (regular), 500 (medium), 600 (semibold), 700 (bold).
-Rule: 700 is Hero display only. 600 is section headings only. 500 is labels/nav. 400 is all body.
+Weights used: 400 (regular), 700 (bold).
+Rule: 700 is used for all headings (Display + Heading roles). 400 is used for all body text, labels, nav links, and sub-headlines.
 
 **Source:** CONTEXT.md D-05, D-18; Claude's Discretion for exact px values
 
@@ -129,7 +127,7 @@ Components to build or use for Phase 1:
 | FAQAccordion | Build new (base-ui Collapsible) | accordion style, single open at a time, 4-6 items |
 | CTASection | Build new | full-width band, heading + 1 primary CTA |
 | Footer | Build new | logo, nav links, copyright, RO/EN toggle mirror |
-| DarkModeToggle | Build new | lucide Sun/Moon icon button, 44px touch target |
+| DarkModeToggle | Build new | lucide Sun/Moon icon button, 44px touch target; `aria-label="Comută modul întunecat"` (RO) / `aria-label="Toggle dark mode"` (EN) — icon-only button requires explicit label |
 | LanguageToggle | Build new | "RO / EN" text toggle button in nav |
 | StructuralDiagram | Build new | SVG beam with animated reactions + moment diagram (CSS animation fallback if Lottie unavailable) |
 
@@ -276,6 +274,7 @@ Empty state: not applicable in Phase 1 (static marketing page with no data-drive
 | Semantic HTML | Nav uses `<nav>`, sections use `<section id="...">`, headings use correct h1/h2/h3 hierarchy |
 | h1 rule | Exactly one `<h1>` per page — Hero headline only |
 | ARIA | FAQ accordion: aria-expanded on trigger, aria-controls pointing to content panel |
+| ARIA (icon-only) | DarkModeToggle is icon-only — must include `aria-label="Comută modul întunecat"` (RO) / `aria-label="Toggle dark mode"` (EN), updated dynamically on language toggle |
 | Language | `<html lang="ro">` default, updated to `lang="en"` on toggle |
 | Skip link | `<a href="#features" class="sr-only focus:not-sr-only">` at top of `<body>` |
 
