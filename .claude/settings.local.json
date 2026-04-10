@@ -31,7 +31,8 @@
       "Bash(./node_modules/.bin/vite build:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Skill(gsd:discuss-phase)"
+      "Skill(gsd:discuss-phase)",
+      "Skill(gsd:ui-phase)"
     ]
   }
 }
