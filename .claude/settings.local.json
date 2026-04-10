@@ -28,7 +28,9 @@
       "Bash(npx tsc:*)",
       "Bash(npx vite:*)",
       "Bash(./node_modules/.bin/tsc -b)",
-      "Bash(./node_modules/.bin/vite build:*)"
+      "Bash(./node_modules/.bin/vite build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
