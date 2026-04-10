@@ -22,7 +22,8 @@
       "Skill(gsd:execute-phase)",
       "Skill(gsd:resume-work)",
       "Skill(gsd:progress)",
-      "mcp__plugin_claude-mem_mcp-search__get_observations"
+      "mcp__plugin_claude-mem_mcp-search__get_observations",
+      "Bash(node:*)"
     ]
   }
 }
