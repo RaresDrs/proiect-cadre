@@ -30,7 +30,8 @@
       "Bash(./node_modules/.bin/tsc -b)",
       "Bash(./node_modules/.bin/vite build:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Skill(gsd:discuss-phase)"
     ]
   }
 }
