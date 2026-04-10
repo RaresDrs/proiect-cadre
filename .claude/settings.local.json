@@ -23,7 +23,8 @@
       "Skill(gsd:resume-work)",
       "Skill(gsd:progress)",
       "mcp__plugin_claude-mem_mcp-search__get_observations",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
