@@ -6,7 +6,7 @@ Aplicatie web + mobile de nivel enterprise pentru analiza structurala 2D (grinzi
 
 ## Phases
 
-- [ ] **Phase 0: Setup Proiect** - Initializare repo React+Vite+TS, FastAPI, Tailwind+shadcn, CI/CD, migrare calcule din app.py
+- [x] **Phase 0: Setup Proiect** - Initializare repo React+Vite+TS, FastAPI, Tailwind+shadcn, CI/CD, migrare calcule din app.py ✓ 2026-04-10
 - [ ] **Phase 1: Design Sistem & Landing Page** - Design system complet, landing page cu toate sectiunile, dark/light mode, SEO
 - [ ] **Phase 2: Modul Grinzi 2D** - Calculator interactiv cu diagrame M/T/N animate, export PDF, salvare calcul
 - [ ] **Phase 3: Modul Cadre 2D** - Editor vizual noduri+bare, metoda rigiditatilor, deformata animata
@@ -29,9 +29,9 @@ Aplicatie web + mobile de nivel enterprise pentru analiza structurala 2D (grinzi
 **Plans**: 3 planuri in 2 valuri
 
 Plans:
-- [ ] 00-01-PLAN.md — React 19 + Vite + TypeScript + Tailwind v4 + shadcn/ui scaffold
-- [x] 00-02-PLAN.md — FastAPI backend + migrare calcule anastruct din app.py
-- [ ] 00-03-PLAN.md — GitHub Actions CI/CD + deploy Vercel (frontend) + Railway (API)
+- [x] 00-01-PLAN.md — React 19 + Vite + TypeScript + Tailwind v4 + shadcn/ui scaffold ✓
+- [x] 00-02-PLAN.md — FastAPI backend + migrare calcule anastruct din app.py ✓
+- [x] 00-03-PLAN.md — GitHub Actions CI/CD + deploy Vercel (frontend) + Railway (API) ✓
 
 ### Phase 1: Design Sistem & Landing Page
 **Goal**: Landing page profesional cu design system complet, dark/light mode, animatii si SEO optimizat
