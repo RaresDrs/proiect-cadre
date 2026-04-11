@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-04-11T22:40:36.889Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-04-11T22:40:53.465Z"
 last_activity: 2026-04-11
 progress:
   total_phases: 7
@@ -53,6 +53,7 @@ Progress: [█░░░░░░░░░] 10%
 - Trend: Stable
 
 | Phase 01-design-sistem-landing-page P01 | 8 | 3 tasks | 15 files |
+| Phase 01-design-sistem-landing-page P02 | 10 | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,10 @@ Progress: [█░░░░░░░░░] 10%
 - [Phase 01-design-sistem-landing-page]: jsdom matchMedia mock via Object.defineProperty — vi.spyOn fails because jsdom does not define window.matchMedia
 - [Phase 01-design-sistem-landing-page]: Brand tokens appended as new @layer base block after existing shadcn OKLCH tokens — never rewrite existing tokens
 - [Phase 01-design-sistem-landing-page]: i18n as plain TypeScript object — no external library needed for 30+ keys in 2 languages
+- [Phase 01-design-sistem-landing-page]: motion/react LazyMotion + React.lazy for hero animations — reduces initial bundle from 34KB to 4.6KB
+- [Phase 01-design-sistem-landing-page]: IntersectionObserver mock must use class not arrow function — arrow functions cannot be used as constructors with new
+- [Phase 01-design-sistem-landing-page]: FAQSection single-open accordion via openItem state + Collapsible.Root open prop — simpler than Accordion primitive
+- [Phase 01-design-sistem-landing-page]: EmailCapture regex validation without external library — sufficient for single email field
 
 ### Pending Todos
 
@@ -76,6 +81,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-11T17:22:28.324Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-04-11T22:40:53.457Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
