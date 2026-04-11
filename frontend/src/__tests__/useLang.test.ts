@@ -1,4 +1,6 @@
-import { describe, it, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
+import { useLang } from '@/hooks/useLang'
 
 describe('useLang — REQ-1j, REQ-1l', () => {
   beforeEach(() => {
@@ -6,9 +8,41 @@ describe('useLang — REQ-1j, REQ-1l', () => {
     document.documentElement.setAttribute('lang', 'ro')
   })
 
-  it.todo('defaults to "ro" language')
-  it.todo('toggleLang switches from ro to en')
-  it.todo('toggleLang switches from en to ro')
-  it.todo('persists lang to localStorage key "structcalc-lang"')
-  it.todo('updates document.documentElement.lang attribute on toggle')
+  it('defaults to "ro" language', () => {
+    const { result } = renderHook(() => useLang())
+    expect(result.current.lang).toBe('ro')
+  })
+
+  it('toggleLang switches from ro to en', () => {
+    const { result } = renderHook(() => useLang())
+    act(() => {
+      result.current.toggleLang()
+    })
+    expect(result.current.lang).toBe('en')
+  })
+
+  it('toggleLang switches from en to ro', () => {
+    localStorage.setItem('structcalc-lang', 'en')
+    const { result } = renderHook(() => useLang())
+    act(() => {
+      result.current.toggleLang()
+    })
+    expect(result.current.lang).toBe('ro')
+  })
+
+  it('persists lang to localStorage key "structcalc-lang"', () => {
+    const { result } = renderHook(() => useLang())
+    act(() => {
+      result.current.toggleLang()
+    })
+    expect(localStorage.getItem('structcalc-lang')).toBe('en')
+  })
+
+  it('updates document.documentElement.lang attribute on toggle', () => {
+    const { result } = renderHook(() => useLang())
+    act(() => {
+      result.current.toggleLang()
+    })
+    expect(document.documentElement.getAttribute('lang')).toBe('en')
+  })
 })
