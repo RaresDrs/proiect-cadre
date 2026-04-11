@@ -150,3 +150,68 @@ body {
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* === StructCalc Brand Tokens (Phase 1) ===
+   Appended after existing shadcn base tokens — do not reorder existing tokens above.
+   These override the shadcn neutral palette with the Apple-style brand palette. */
+
+@layer base {
+  :root {
+    /* Brand backgrounds */
+    --brand-bg: #F5F5F7;          /* D-01: dominant 60% — page background */
+    --brand-card: #FFFFFF;         /* secondary 30% — cards, nav */
+    --brand-accent: #2563EB;       /* D-03: accent 10% — engineering blue */
+    --brand-text: #1D1D1F;         /* D-02: primary text */
+    --brand-muted: #6E6E73;        /* D-04: secondary/muted text */
+    --brand-border: #E5E5EA;       /* card borders, dividers */
+    --brand-destructive: #DC2626;  /* email validation error — light mode */
+
+    /* Spacing scale (CSS vars for consistency) */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+    --space-3xl: 64px;
+
+    /* Typography */
+    --text-body: 16px;
+    --text-label: 14px;
+    --text-heading-desktop: 28px;
+    --text-heading-mobile: 22px;
+    --text-display-desktop: 56px;
+    --text-display-mobile: 36px;
+  }
+
+  .dark {
+    /* Brand backgrounds — dark mode (D-07) */
+    --brand-bg: #000000;           /* OLED-friendly dominant */
+    --brand-card: #111111;         /* cards, nav background */
+    --brand-accent: #3B82F6;       /* D-07: lightened 1 step for AAA contrast on black */
+    --brand-text: #F5F5F7;         /* primary text dark */
+    --brand-muted: #6E6E73;        /* same semantic role */
+    --brand-border: #2A2A2A;       /* card borders dark */
+    --brand-destructive: #F87171;  /* lightened for dark bg contrast */
+  }
+
+  /* Global accessibility: focus rings */
+  *:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+  }
+
+  /* Cursor pointer on all interactive elements */
+  button, [role="button"], a {
+    cursor: pointer;
+  }
+}
+
+/* Animation: prefers-reduced-motion — disable all transitions/animations globally */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
