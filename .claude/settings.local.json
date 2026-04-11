@@ -32,7 +32,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Skill(gsd:discuss-phase)",
-      "Skill(gsd:ui-phase)"
+      "Skill(gsd:ui-phase)",
+      "Bash(sed -n '7,21p' \"/c/Users/Rares/proiect-cadre/.planning/phases/01-design-sistem-landing-page/01-03-PLAN.md\")",
+      "Bash(sed -n '7,22p' \"/c/Users/Rares/proiect-cadre/.planning/phases/01-design-sistem-landing-page/01-02-PLAN.md\")"
     ]
   }
 }
