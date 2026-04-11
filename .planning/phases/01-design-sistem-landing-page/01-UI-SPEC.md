@@ -1,7 +1,8 @@
 ---
 phase: 1
 slug: design-sistem-landing-page
-status: draft
+status: approved
+reviewed_at: 2026-04-11T10:59:00+03:00
 shadcn_initialized: true
 preset: base-nova / neutral / cssVariables
 created: 2026-04-10
