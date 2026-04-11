@@ -16,14 +16,16 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 // jsdom does not implement IntersectionObserver — mock it globally
-const mockIntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+// Must use a class (not arrow function) so it can be used as a constructor with 'new'
+class MockIntersectionObserver {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+  constructor(_callback: IntersectionObserverCallback, _options?: IntersectionObserverInit) {}
+}
 Object.defineProperty(window, 'IntersectionObserver', {
   writable: true,
   configurable: true,
-  value: mockIntersectionObserver,
+  value: MockIntersectionObserver,
 })
-global.IntersectionObserver = mockIntersectionObserver
+global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
