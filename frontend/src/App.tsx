@@ -1,28 +1,23 @@
-import { Button } from "@/components/ui/button"
+import { Navbar } from '@/components/layout/Navbar'
+import { Footer } from '@/components/layout/Footer'
+import { HeroSection } from '@/components/sections/HeroSection'
+import { FeaturesSection } from '@/components/sections/FeaturesSection'
+import { PricingSection } from '@/components/sections/PricingSection'
+import { FAQSection } from '@/components/sections/FAQSection'
+import { CTASection } from '@/components/sections/CTASection'
 
 function App() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b px-6 py-4">
-        <h1 className="text-2xl font-bold text-primary">
-          StructCalc
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Calculator structural 2D — Stud. Pop Rares Darius
-        </p>
-      </header>
-      <main className="container mx-auto px-6 py-12 text-center">
-        <h2 className="text-4xl font-bold mb-4">
-          Bun venit la StructCalc
-        </h2>
-        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-          Aplicatie web de calcul structural 2D pentru grinzi si cadre.
-          Stack: React 19 + FastAPI + anastruct.
-        </p>
-        <Button size="lg" onClick={() => alert('API: /health')}>
-          Verifica conexiunea API
-        </Button>
+    <div className="bg-[var(--brand-bg)] text-[var(--brand-text)] min-h-screen">
+      <Navbar />
+      <main>
+        <HeroSection />
+        <FeaturesSection />
+        <PricingSection />
+        <FAQSection />
+        <CTASection />
       </main>
+      <Footer />
     </div>
   )
 }
