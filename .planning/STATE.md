@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-04-11T22:40:53.465Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-04-11T23:00:09.936Z"
 last_activity: 2026-04-11
 progress:
   total_phases: 7
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 10
 ---
 
@@ -70,6 +70,8 @@ Progress: [█░░░░░░░░░] 10%
 - [Phase 01-design-sistem-landing-page]: IntersectionObserver mock must use class not arrow function — arrow functions cannot be used as constructors with new
 - [Phase 01-design-sistem-landing-page]: FAQSection single-open accordion via openItem state + Collapsible.Root open prop — simpler than Accordion primitive
 - [Phase 01-design-sistem-landing-page]: EmailCapture regex validation without external library — sufficient for single email field
+- [Phase 01-03]: Placeholder 1x1 PNG icons for PWA manifest — real icons deferred to Phase 6
+- [Phase 01-03]: Manual SW (no Workbox) for Phase 1 — keeps bundle lean, Workbox considered for Phase 6
 
 ### Pending Todos
 
@@ -81,6 +83,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-11T22:40:53.457Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-04-11T22:59:59.208Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None

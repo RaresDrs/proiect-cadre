@@ -47,7 +47,7 @@ Plans:
 Plans:
 - [x] 01-01: Design system (culori, tipografie, componente shadcn) ✓ 2026-04-11
 - [x] 01-02: Landing page sectiuni principale + animatii Framer Motion
-- [ ] 01-03: SEO, dark/light mode, responsive final
+- [x] 01-03: SEO, dark/light mode, responsive final
 
 ### Phase 2: Modul Grinzi 2D
 **Goal**: Calculator interactiv grinzi 2D cu vizualizare diagrame M/T/N animate, export PDF si salvare calcul in cont
