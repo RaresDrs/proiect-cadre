@@ -61,7 +61,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 02-01: UI input grinda (tip rezemare, geometrie, incarcari)
+- [x] 02-01: UI input grinda (tip rezemare, geometrie, incarcari)
 - [ ] 02-02: Calcule FEM backend si endpoint-uri API
 - [ ] 02-03: Vizualizare diagrame M/T/N animate (D3.js)
 - [ ] 02-04: Export PDF si salvare calcul
@@ -114,7 +114,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 0. Setup Proiect | 1/3 | In Progress|  |
 | 1. Design Sistem & Landing Page | 2/3 | In Progress|  |
-| 2. Modul Grinzi 2D | 0/4 | Not started | - |
+| 2. Modul Grinzi 2D | 1/2 | In Progress|  |
 | 3. Modul Cadre 2D | 0/0 | Not started | - |
 | 4. Sistem Conturi & Colaborare | 0/0 | Not started | - |
 | 5. Mobile App | 0/0 | Not started | - |
