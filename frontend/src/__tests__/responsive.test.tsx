@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react'
 import { describe, it, expect, beforeEach } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 
 describe('Responsive layout — REQ-1g', () => {
   beforeEach(() => {
@@ -11,12 +12,12 @@ describe('Responsive layout — REQ-1g', () => {
 
   it('App renders without throwing at 320px viewport', async () => {
     const { default: App } = await import('@/App')
-    expect(() => render(<App />)).not.toThrow()
+    expect(() => render(<MemoryRouter initialEntries={['/']}><App /></MemoryRouter>)).not.toThrow()
   })
 
   it('App container has max-w constraint so content does not overflow at 320px', async () => {
     const { default: App } = await import('@/App')
-    const { container } = render(<App />)
+    const { container } = render(<MemoryRouter initialEntries={['/']}><App /></MemoryRouter>)
     // All section content uses max-w-[1200px] mx-auto px-6
     // The outermost div should not have any inline width > 320
     const root = container.firstElementChild as HTMLElement
