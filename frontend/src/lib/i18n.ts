@@ -52,6 +52,10 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Accessibility
     'a11y.darkmode': 'Comuta modul intunecat',
     'a11y.skip': 'Sari la continut',
+    // Beam page
+    'beam.page.title': 'Calculator grinda 2D',
+    'beam.page.subtitle': 'Definiti geometria, rezemerile si incarcaturile pentru a obtine diagramele M, T, N si deformata.',
+    'nav.beam': 'Calculator',
   },
   en: {
     // Nav
@@ -104,5 +108,9 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Accessibility
     'a11y.darkmode': 'Toggle dark mode',
     'a11y.skip': 'Skip to content',
+    // Beam page
+    'beam.page.title': '2D Beam Calculator',
+    'beam.page.subtitle': 'Define geometry, supports and loads to get M, V, N diagrams and deflection.',
+    'nav.beam': 'Calculator',
   },
 }

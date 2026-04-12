@@ -1,4 +1,5 @@
 import { Sun, Moon } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/hooks/useTheme'
 import { useLang } from '@/hooks/useLang'
@@ -6,6 +7,7 @@ import { useLang } from '@/hooks/useLang'
 export function Navbar() {
   const { theme, toggleTheme } = useTheme()
   const { lang, toggleLang, t } = useLang()
+  const navigate = useNavigate()
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
@@ -69,7 +71,7 @@ export function Navbar() {
           {/* CTA */}
           <Button
             size="sm"
-            onClick={() => scrollTo('cta')}
+            onClick={() => navigate('/beam')}
             className="bg-[var(--brand-accent)] text-white hover:bg-[var(--brand-accent)]/90
                        transition-colors duration-150"
           >
