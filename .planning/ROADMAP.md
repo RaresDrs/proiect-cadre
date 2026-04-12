@@ -62,7 +62,7 @@ Plans:
 
 Plans:
 - [x] 02-01: UI input grinda (tip rezemare, geometrie, incarcari)
-- [ ] 02-02: Calcule FEM backend si endpoint-uri API
+- [x] 02-02: Calcule FEM backend si endpoint-uri API
 - [ ] 02-03: Vizualizare diagrame M/T/N animate (D3.js)
 - [ ] 02-04: Export PDF si salvare calcul
 
