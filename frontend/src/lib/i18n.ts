@@ -80,6 +80,8 @@ export const translations: Record<Lang, Record<string, string>> = {
     'beam.form.dist.end': 'x end (m)',
     'beam.form.solve': 'Calculeaza',
     'beam.form.unstable': 'Structura este instabila (adaugati cel putin un pin sau incastrare).',
+    'beam.action.copy.link': 'Copiaza link',
+    'beam.action.export.pdf': 'Export PDF',
     'beam.preview.title': 'Previzualizare grinda',
   },
   en: {
@@ -161,6 +163,8 @@ export const translations: Record<Lang, Record<string, string>> = {
     'beam.form.dist.end': 'x end (m)',
     'beam.form.solve': 'Calculate',
     'beam.form.unstable': 'Structure is unstable (add at least one pin or fixed support).',
+    'beam.action.copy.link': 'Copy link',
+    'beam.action.export.pdf': 'Export PDF',
     'beam.preview.title': 'Beam preview',
   },
 }
