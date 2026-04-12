@@ -21,9 +21,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* Path aliases — ignoreDeprecations required for baseUrl in TS 6.0 */
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
+    /* Path aliases */
     "paths": {
       "@/*": ["./src/*"]
     }
