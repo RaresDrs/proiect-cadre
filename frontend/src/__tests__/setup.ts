@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import '@testing-library/jest-dom'
 
 // jsdom does not implement window.matchMedia — mock it globally
 Object.defineProperty(window, 'matchMedia', {
@@ -16,7 +17,10 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 // jsdom does not implement IntersectionObserver — mock it globally
+<<<<<<< HEAD
+=======
 // Must use a class (not arrow function) so it can be used as a constructor with 'new'
+>>>>>>> fdab61cb64d884bc27353fb136059f0b35c4de5f
 class MockIntersectionObserver {
   observe = vi.fn()
   unobserve = vi.fn()

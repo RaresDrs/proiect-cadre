@@ -34,7 +34,14 @@
       "Skill(gsd:discuss-phase)",
       "Skill(gsd:ui-phase)",
       "Bash(sed -n '7,21p' \"/c/Users/Rares/proiect-cadre/.planning/phases/01-design-sistem-landing-page/01-03-PLAN.md\")",
-      "Bash(sed -n '7,22p' \"/c/Users/Rares/proiect-cadre/.planning/phases/01-design-sistem-landing-page/01-02-PLAN.md\")"
+      "Bash(sed -n '7,22p' \"/c/Users/Rares/proiect-cadre/.planning/phases/01-design-sistem-landing-page/01-02-PLAN.md\")",
+      "Bash(git cherry-pick:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(GIT_EDITOR=true git cherry-pick --continue)",
+      "Bash(npx vitest:*)",
+      "Bash(git -C \"C:/Users/Rares/proiect-cadre\" status --short -- \".planning/\")",
+      "Bash(git check-ignore:*)"
     ]
   }
 }

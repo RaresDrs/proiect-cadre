@@ -47,7 +47,7 @@ Plans:
 Plans:
 - [x] 01-01: Design system (culori, tipografie, componente shadcn) ✓ 2026-04-11
 - [x] 01-02: Landing page sectiuni principale + animatii Framer Motion
-- [ ] 01-03: SEO, dark/light mode, responsive final
+- [x] 01-03: SEO, dark/light mode, responsive final
 
 ### Phase 2: Modul Grinzi 2D
 **Goal**: Calculator interactiv grinzi 2D cu vizualizare diagrame M/T/N animate, export PDF si salvare calcul in cont
@@ -61,8 +61,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 02-01: UI input grinda (tip rezemare, geometrie, incarcari)
-- [ ] 02-02: Calcule FEM backend si endpoint-uri API
+- [x] 02-01: UI input grinda (tip rezemare, geometrie, incarcari)
+- [x] 02-02: Calcule FEM backend si endpoint-uri API
 - [ ] 02-03: Vizualizare diagrame M/T/N animate (D3.js)
 - [ ] 02-04: Export PDF si salvare calcul
 
@@ -114,7 +114,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 0. Setup Proiect | 1/3 | In Progress|  |
 | 1. Design Sistem & Landing Page | 2/3 | In Progress|  |
-| 2. Modul Grinzi 2D | 0/4 | Not started | - |
+| 2. Modul Grinzi 2D | 1/2 | In Progress|  |
 | 3. Modul Cadre 2D | 0/0 | Not started | - |
 | 4. Sistem Conturi & Colaborare | 0/0 | Not started | - |
 | 5. Mobile App | 0/0 | Not started | - |

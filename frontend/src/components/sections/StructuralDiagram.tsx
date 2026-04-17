@@ -32,8 +32,8 @@ export function StructuralDiagram() {
         <circle cx="420" cy="155" r="5" stroke="var(--brand-text)" strokeWidth="2" fill="none" />
         <line x1="398" y1="164" x2="442" y2="164" stroke="var(--brand-text)" strokeWidth="2" />
 
-        {/* Distributed load arrows (7 arrows) */}
-        {[96, 144, 192, 240, 288, 336, 384].map((x, i) => (
+        {/* Distributed load arrows — full beam coverage */}
+        {[60, 105, 150, 195, 240, 285, 330, 375, 420].map((x, i) => (
           <g key={i}>
             <line x1={x} y1="80" x2={x} y2="116" stroke="var(--brand-accent)" strokeWidth="1.5" />
             <polygon points={`${x},120 ${x - 4},110 ${x + 4},110`} fill="var(--brand-accent)" />

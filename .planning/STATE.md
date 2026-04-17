@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-04-11T22:40:53.465Z"
-last_activity: 2026-04-11
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-04-12T14:43:22.634Z"
+last_activity: 2026-04-12
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 5
+  completed_phases: 3
+  total_plans: 8
+  completed_plans: 8
   percent: 10
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/ROADMAP.md (updated 2026-04-11)
 
 **Core value:** Structural analysis tool for Romanian students/engineers — free, precise, PWA
-**Current focus:** Phase 1: Design Sistem & Landing Page
+**Current focus:** Phase 02 — modul-grinzi-2d
 
 ## Current Position
 
-Phase: 1 of 6 (Design Sistem & Landing Page)
-Plan: 3 of 3 in current phase
+Phase: 02 (modul-grinzi-2d) — EXECUTING
+Plan: 2 of 2
 Status: Phase complete — ready for verification
-Last activity: 2026-04-11
+Last activity: 2026-04-12
 
 Progress: [█░░░░░░░░░] 10%
 
@@ -54,6 +54,8 @@ Progress: [█░░░░░░░░░] 10%
 
 | Phase 01-design-sistem-landing-page P01 | 8 | 3 tasks | 15 files |
 | Phase 01-design-sistem-landing-page P02 | 10 | 3 tasks | 13 files |
+| Phase 02-modul-grinzi-2d P01 | 7 | 3 tasks | 18 files |
+| Phase 02-modul-grinzi-2d P02 | 3 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -70,6 +72,13 @@ Progress: [█░░░░░░░░░] 10%
 - [Phase 01-design-sistem-landing-page]: IntersectionObserver mock must use class not arrow function — arrow functions cannot be used as constructors with new
 - [Phase 01-design-sistem-landing-page]: FAQSection single-open accordion via openItem state + Collapsible.Root open prop — simpler than Accordion primitive
 - [Phase 01-design-sistem-landing-page]: EmailCapture regex validation without external library — sufficient for single email field
+- [Phase 01-03]: Placeholder 1x1 PNG icons for PWA manifest — real icons deferred to Phase 6
+- [Phase 01-03]: Manual SW (no Workbox) for Phase 1 — keeps bundle lean, Workbox considered for Phase 6
+- [Phase 02-modul-grinzi-2d]: Navbar CTA uses useNavigate('/beam') — @base-ui/react Button does not support asChild prop
+- [Phase 02-modul-grinzi-2d]: Native HTML select for support type picker — avoids base-ui Select portal complexity, works cleanly with label htmlFor in tests
+- [Phase 02-modul-grinzi-2d]: @testing-library/jest-dom added to test setup — required for toBeDisabled matcher in beam-input-form test stubs
+- [Phase 02-modul-grinzi-2d]: useBeamSolver uses useCallback for solve/reset to prevent re-renders when passed as props to BeamInputForm
+- [Phase 02-modul-grinzi-2d]: decodeBeamHash validates shape before returning to prevent malformed objects reaching form state
 
 ### Pending Todos
 
@@ -81,6 +90,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-11T22:40:53.457Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-04-12T14:43:22.628Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

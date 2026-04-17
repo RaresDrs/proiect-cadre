@@ -128,7 +128,7 @@ export function HeroSection() {
         </div>
 
         {/* Structural diagram */}
-        <div className="hidden lg:flex justify-center">
+        <div className="flex justify-center">
           <StructuralDiagram />
         </div>
       </div>
