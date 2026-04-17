@@ -50,13 +50,15 @@ Exceptions: SVG canvas internal padding uses 40px (inherited from BeamPreview.ts
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px | 400 (regular) | 1.5 |
-| Label | 12px | 500 (medium) | 1.4 |
+| Label | 12px | 400 (regular) | 1.4 |
 | Heading | 20px | 600 (semibold) | 1.2 |
 | Display | 28px | 600 (semibold) | 1.2 |
 
+**Font weights: 2 total -- 400 (regular) + 600 (semibold).**
+
 **Notes:**
 - Body 14px used for side panel field labels, tooltips, result table cells.
-- Label 12px used for SVG diagram value labels (max/min per bar), grid axis labels, toolbar mode indicator.
+- Label 12px distinguished from Body by size alone (12px vs 14px), not weight. Used for SVG diagram value labels (max/min per bar), grid axis labels, toolbar mode indicator.
 - Heading 20px used for page title "Cadru 2D" and side panel section headings ("Nod", "Bara").
 - Display 28px not used in this phase (no hero content). Declared for consistency with Phase 1 design system.
 - Font: Geist Variable via `@fontsource-variable/geist` (already imported in `index.css`).
