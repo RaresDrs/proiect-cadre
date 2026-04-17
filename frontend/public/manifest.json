@@ -1,0 +1,25 @@
+{
+  "name": "StructCalc",
+  "short_name": "StructCalc",
+  "description": "Software profesional pentru analiza structurilor 2D — gratuit pentru studenți și ingineri.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#2563EB",
+  "background_color": "#F5F5F7",
+  "lang": "ro",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

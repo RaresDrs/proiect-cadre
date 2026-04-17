@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import '@testing-library/jest-dom'
 
 // jsdom does not implement window.matchMedia — mock it globally
 Object.defineProperty(window, 'matchMedia', {

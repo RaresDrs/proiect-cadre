@@ -21,6 +21,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2563EB" />
     <title>StructCalc — Calcul structural 2D</title>
+
+    <!-- Primary SEO meta tags -->
+    <meta name="description" content="Software profesional pentru analiza structurilor 2D — gratuit pentru studenți și ingineri. Calcul grinzi, cadre 2D, export PDF, dark mode, PWA." />
+    <meta name="keywords" content="calcul structural, grinzi 2D, cadre 2D, analiza structuri, software inginerie, student, gratuit" />
+    <meta name="author" content="Pop Rareș Darius" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph (Facebook, LinkedIn) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://structcalc.vercel.app/" />
+    <meta property="og:title" content="StructCalc — Calculul structural, reinventat" />
+    <meta property="og:description" content="Software profesional pentru analiza structurilor 2D — gratuit pentru studenți și ingineri." />
+    <meta property="og:image" content="https://structcalc.vercel.app/og-image.svg" />
+    <meta property="og:locale" content="ro_RO" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:site_name" content="StructCalc" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="StructCalc — Calculul structural, reinventat" />
+    <meta name="twitter:description" content="Software profesional pentru analiza structurilor 2D — gratuit pentru studenți și ingineri." />
+    <meta name="twitter:image" content="https://structcalc.vercel.app/og-image.svg" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://structcalc.vercel.app/" />
+
+    <!-- JSON-LD structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "StructCalc",
+      "url": "https://structcalc.vercel.app/",
+      "description": "Software profesional pentru analiza structurilor 2D — gratuit pentru studenți și ingineri.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://structcalc.vercel.app/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "publisher": {
+        "@type": "Person",
+        "name": "Pop Rareș Darius"
+      }
+    }
+    </script>
   </head>
   <body>
     <a href="#features" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded">
@@ -28,5 +73,14 @@
     </a>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').catch(function(err) {
+            console.warn('SW registration failed:', err)
+          })
+        })
+      }
+    </script>
   </body>
 </html>
