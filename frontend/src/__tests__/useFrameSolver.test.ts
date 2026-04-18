@@ -1,8 +1,7 @@
 // REQ-03-02, REQ-03-03
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-// useFrameSolver will be created in 03-02-PLAN.md
-// import { useFrameSolver } from '@/hooks/useFrameSolver'
+import { useFrameSolver } from '@/hooks/useFrameSolver'
 import type { FrameInput, FrameResult } from '@/types/api'
 
 const mockInput: FrameInput = {
@@ -28,8 +27,48 @@ const mockResult: FrameResult = {
 beforeEach(() => { vi.restoreAllMocks() })
 
 describe('useFrameSolver — REQ-03-02, REQ-03-03', () => {
-  it.todo('success: sets result from 200 response, clears error')
-  it.todo('422: sets error string from detail field')
-  it.todo('network error: sets error string')
-  it.todo('reset(): clears result and error')
+  it('success: sets result from 200 response, clears error', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockResult,
+    }))
+    const { result } = renderHook(() => useFrameSolver())
+    await act(async () => { await result.current.solve(mockInput) })
+    expect(result.current.result).toEqual(mockResult)
+    expect(result.current.error).toBeNull()
+    expect(result.current.loading).toBe(false)
+  })
+
+  it('422: sets error string from detail field', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      json: async () => ({ detail: 'Cadrul nu are reazeme' }),
+    }))
+    const { result } = renderHook(() => useFrameSolver())
+    await act(async () => { await result.current.solve(mockInput) })
+    expect(result.current.result).toBeNull()
+    expect(result.current.error).toContain('Cadrul nu are reazeme')
+  })
+
+  it('network error: sets error string', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network failure')))
+    const { result } = renderHook(() => useFrameSolver())
+    await act(async () => { await result.current.solve(mockInput) })
+    expect(result.current.result).toBeNull()
+    expect(result.current.error).toBeTruthy()
+  })
+
+  it('reset(): clears result and error', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockResult,
+    }))
+    const { result } = renderHook(() => useFrameSolver())
+    await act(async () => { await result.current.solve(mockInput) })
+    expect(result.current.result).not.toBeNull()
+    act(() => { result.current.reset() })
+    expect(result.current.result).toBeNull()
+    expect(result.current.error).toBeNull()
+  })
 })
