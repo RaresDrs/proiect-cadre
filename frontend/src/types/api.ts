@@ -58,3 +58,68 @@ export interface SectionResult {
   Wx: number;   // modul de rezistenta (cm3)
   ix: number;   // raza de giratie (cm)
 }
+
+// ── Phase 3: Modul Cadre 2D ─────────────────────────────────────────────────
+
+export type ConstraintType = 'free' | 'pin' | 'roller' | 'fixed'
+
+export interface FrameNode {
+  id: string           // UUID string, e.g. crypto.randomUUID()
+  x: number            // metres, engineering coordinate
+  y: number            // metres, engineering coordinate (Y up)
+  constraint: ConstraintType
+}
+
+export interface FrameBar {
+  id: string           // UUID string
+  node_i: string       // FrameNode.id of start node
+  node_j: string       // FrameNode.id of end node
+  EI: number           // kN·m², default 21000
+  EA: number           // kN, default 2100000
+}
+
+export interface NodeLoad {
+  node_id: string      // FrameNode.id
+  Fx: number           // kN, positive = rightward
+  Fy: number           // kN, positive = upward
+  Mz: number           // kN·m, positive = CCW
+}
+
+export interface BarLoad {
+  bar_id: string       // FrameBar.id
+  q: number            // kN/m, positive = downward (global Y-)
+  q_start: number      // fraction 0..1 of bar length, start of load
+  q_end: number        // fraction 0..1 of bar length, end of load
+}
+
+export interface FrameInput {
+  nodes: FrameNode[]
+  bars: FrameBar[]
+  node_loads: NodeLoad[]
+  bar_loads: BarLoad[]
+}
+
+// Per-bar diagram data returned by backend
+export interface FrameBarDiagram {
+  bar_id: string
+  M: number[]          // bending moment values at equally-spaced points along bar
+  V: number[]          // shear force values
+  N: number[]          // axial force values
+}
+
+// Per-node displacement result
+export interface FrameNodeResult {
+  node_id: string
+  ux: number           // horizontal displacement (m)
+  uy: number           // vertical displacement (m)
+  phi_z: number        // rotation (rad)
+}
+
+export interface FrameResult {
+  bar_diagrams: FrameBarDiagram[]
+  node_results: FrameNodeResult[]
+  reactions: Record<string, number>  // key: "node_{id}_Fx|Fy|Mz", value: kN or kN·m
+  max_M: number
+  max_V: number
+  max_N: number
+}
