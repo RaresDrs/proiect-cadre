@@ -1,7 +1,6 @@
 // REQ-03-01, REQ-03-10
 import { describe, it, expect } from 'vitest'
-// encodeFrameHash and decodeFrameHash will be created in 03-02-PLAN.md
-// import { encodeFrameHash, decodeFrameHash } from '@/lib/frameHash'
+import { encodeFrameHash, decodeFrameHash } from '@/lib/frameHash'
 import type { FrameInput } from '@/types/api'
 
 const sample: FrameInput = {
@@ -21,8 +20,30 @@ const sample: FrameInput = {
 }
 
 describe('frameHash — REQ-03-01, REQ-03-10', () => {
-  it.todo('round-trip encode then decode returns equivalent FrameInput')
-  it.todo('decodeFrameHash returns null for empty string')
-  it.todo('decodeFrameHash returns null for malformed base64')
-  it.todo('decodeFrameHash returns null when nodes or bars array is missing')
+  it('round-trip encode then decode returns equivalent FrameInput', () => {
+    const hash = encodeFrameHash(sample)
+    const decoded = decodeFrameHash(hash)
+    expect(decoded).not.toBeNull()
+    expect(decoded!.nodes).toHaveLength(4)
+    expect(decoded!.bars).toHaveLength(3)
+    expect(decoded!.nodes[0].id).toBe('n1')
+    expect(decoded!.node_loads[0].Fx).toBe(10)
+  })
+
+  it('decodeFrameHash returns null for empty string', () => {
+    expect(decodeFrameHash('')).toBeNull()
+  })
+
+  it('decodeFrameHash returns null for malformed base64', () => {
+    expect(decodeFrameHash('!!!not-valid-base64!!!')).toBeNull()
+  })
+
+  it('decodeFrameHash returns null when nodes or bars array is missing', () => {
+    // Valid base64 but missing nodes
+    const noNodes = btoa(encodeURIComponent(JSON.stringify({ bars: [] })))
+    expect(decodeFrameHash(noNodes)).toBeNull()
+    // Missing bars
+    const noBars = btoa(encodeURIComponent(JSON.stringify({ nodes: [] })))
+    expect(decodeFrameHash(noBars)).toBeNull()
+  })
 })
