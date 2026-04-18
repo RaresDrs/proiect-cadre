@@ -115,7 +115,7 @@ Plans:
 | 0. Setup Proiect | 1/3 | In Progress|  |
 | 1. Design Sistem & Landing Page | 2/3 | In Progress|  |
 | 2. Modul Grinzi 2D | 1/2 | In Progress|  |
-| 3. Modul Cadre 2D | 1/5 | In Progress|  |
+| 3. Modul Cadre 2D | 1/4 | In Progress|  |
 | 4. Sistem Conturi & Colaborare | 0/0 | Not started | - |
 | 5. Mobile App | 0/0 | Not started | - |
 | 6. Landing Page Dedicat & Marketing | 0/0 | Not started | - |
