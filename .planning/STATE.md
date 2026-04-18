@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-04-18T09:20:59.288Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-04-18T09:26:53.883Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 13
-  completed_plans: 9
+  completed_plans: 10
   percent: 10
 ---
 
@@ -26,7 +26,7 @@ See: .planning/ROADMAP.md (updated 2026-04-11)
 ## Current Position
 
 Phase: 03 (modul-cadre-2d) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-04-18
 
@@ -57,6 +57,7 @@ Progress: [█░░░░░░░░░] 10%
 | Phase 02-modul-grinzi-2d P01 | 7 | 3 tasks | 18 files |
 | Phase 02-modul-grinzi-2d P02 | 3 | 2 tasks | 6 files |
 | Phase 03-modul-cadre-2d P01 | 4 | 2 tasks | 9 files |
+| Phase 03-modul-cadre-2d P02 | 4 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Progress: [█░░░░░░░░░] 10%
 - [Phase 02-modul-grinzi-2d]: decodeBeamHash validates shape before returning to prevent malformed objects reaching form state
 - [Phase 03-modul-cadre-2d]: jsPDF installed with html2canvas peer dep — both packages available for Phase 3 PDF export
 - [Phase 03-modul-cadre-2d]: Test scaffolds use it.todo() not commented-out imports — vitest counts todos without failing
+- [Phase 03-modul-cadre-2d]: anastruct node IDs mapped by vertex coordinate matching — ensures correct support/load assignment when nodes appear out of order across bars
+- [Phase 03-modul-cadre-2d]: roller support uses direction='x' (blocks horizontal, free vertical) — matches portal frame structural convention
+- [Phase 03-modul-cadre-2d]: N diagram linearly interpolated between N_1 and N_2 — anastruct stores axial force as two per-element endpoints only
 
 ### Pending Todos
 
@@ -93,6 +97,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-18T09:20:59.283Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-04-18T09:26:53.878Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
