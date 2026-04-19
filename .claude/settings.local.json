@@ -41,7 +41,8 @@
       "Bash(GIT_EDITOR=true git cherry-pick --continue)",
       "Bash(npx vitest:*)",
       "Bash(git -C \"C:/Users/Rares/proiect-cadre\" status --short -- \".planning/\")",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(git:*)"
     ]
   }
 }
