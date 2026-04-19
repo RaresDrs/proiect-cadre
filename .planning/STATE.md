@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-04-18T09:26:53.883Z"
-last_activity: 2026-04-18
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-04-19T09:30:00.000Z"
+last_activity: 2026-04-19
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 11
   percent: 10
 ---
 
@@ -26,9 +26,9 @@ See: .planning/ROADMAP.md (updated 2026-04-11)
 ## Current Position
 
 Phase: 03 (modul-cadre-2d) — EXECUTING
-Plan: 3 of 5
-Status: Ready to execute
-Last activity: 2026-04-18
+Plan: 4 of 5
+Status: In progress
+Last activity: 2026-04-19
 
 Progress: [█░░░░░░░░░] 10%
 
@@ -58,6 +58,7 @@ Progress: [█░░░░░░░░░] 10%
 | Phase 02-modul-grinzi-2d P02 | 3 | 2 tasks | 6 files |
 | Phase 03-modul-cadre-2d P01 | 4 | 2 tasks | 9 files |
 | Phase 03-modul-cadre-2d P02 | 4 | 3 tasks | 7 files |
+| Phase 03-modul-cadre-2d P03 | 5 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,8 @@ Progress: [█░░░░░░░░░] 10%
 - [Phase 03-modul-cadre-2d]: anastruct node IDs mapped by vertex coordinate matching — ensures correct support/load assignment when nodes appear out of order across bars
 - [Phase 03-modul-cadre-2d]: roller support uses direction='x' (blocks horizontal, free vertical) — matches portal frame structural convention
 - [Phase 03-modul-cadre-2d]: N diagram linearly interpolated between N_1 and N_2 — anastruct stores axial force as two per-element endpoints only
+- [Phase 03-modul-cadre-2d]: computeBBox added to frameCanvas exports — required by hit-test tests to derive BBox from nodes array without hardcoding
+- [Phase 03-modul-cadre-2d]: useFrameSolver uses useCallback for solve/reset — consistent with useBeamSolver pattern to prevent re-renders
 
 ### Pending Todos
 
@@ -97,6 +100,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-18T09:26:53.878Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-04-19T09:30:00.000Z
+Stopped at: Completed 03-03-PLAN.md
 Resume file: None
